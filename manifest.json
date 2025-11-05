@@ -1,0 +1,24 @@
+{
+  "name": "نرم افزار حضور و غیاب",
+  "short_name": "حضور و غیاب",
+  "description": "نرم افزار حرفه ای حضور و غیاب کارکنان",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#4361ee",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "images/yellow.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "images/yellow.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "fa"
+}
