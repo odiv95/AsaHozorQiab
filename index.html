@@ -15,6 +15,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --stop:rgb(255, 153, 0);
+            --start:rgb(0, 255, 170);
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --background: #f5f7fb;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-light: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
 
          @font-face {
   font-family: 'AsaGity';
@@ -84,25 +103,72 @@ url('fonts/shabnam-font-v2.4.0/Shabnam-Bold.woff2') format('woff2');
   font-style: normal;
   font-display: swap;
 }
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --stop:rgb(255, 153, 0);
-            --start:rgb(0, 255, 170);
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --info: #4895ef;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --background: #f5f7fb;
-            --card-bg: #ffffff;
-            --text: #333333;
-            --text-light: #6c757d;
-            --border: #dee2e6;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
-        }
+
+/* استایل پایه برای فونت‌ها */
+body {
+    font-family: 'AsaGity', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: font-family 0.3s ease;
+}
+
+/* استایل برای حالت‌های مختلف فونت */
+body[data-font="AsaGity"] {
+    font-family: 'AsaGity', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body[data-font="AsaGity2"] {
+    font-family: 'AsaGity2', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body[data-font="AsaGity3"] {
+    font-family: 'AsaGity3', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body[data-font="AsaGity4"] {
+    font-family: 'AsaGity4', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body[data-font="AsaGity5"] {
+    font-family: 'AsaGity5', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body[data-font="system"] {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* بهبود نمایش برای فونت‌های مختلف */
+.btn, .form-control, .modal-content {
+    font-family: inherit;
+}
+
+/* استایل برای پیش‌نمایش فونت */
+#fontPreview {
+    transition: font-family 0.3s ease;
+}
+
+/* بهبود نمایش اعداد در فونت‌های فارسی */
+.stat-value, .time-display, .btn, .form-control {
+    font-feature-settings: "numr";
+}
+
+/* استایل برای جداول با فونت‌های مختلف */
+table {
+    font-family: inherit;
+}
+
+th, td {
+    font-family: inherit;
+}
+
+/* اگر فونت بارگذاری نشد، از فونت‌های سیستم استفاده کن */
+body.font-loading {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* اضافه کردن کلاس loading برای فونت‌ها */
+.font-loading #fontPreview {
+    opacity: 0.7;
+    font-style: italic;
+}
 
         .dark-mode {
             --primary: #5a67d8;
@@ -119,7 +185,6 @@ url('fonts/shabnam-font-v2.4.0/Shabnam-Bold.woff2') format('woff2');
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'AsaGity', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
@@ -1365,6 +1430,7 @@ isInWorkingHours(currentHour, currentMinutes) {
             dailyHours: 8,
             workDaysPerWeek: 6,
             overtimeThreshold: 15,
+            fontFamily: 'AsaGity', // فونت پیشفرض
             currencyUnit: 'rial',
             timeFormat: '24h',
             autoWifiEnabled: false,
@@ -1701,9 +1767,13 @@ openAutoCleanupModal() {
 
 
             // مقداردهی اولیه برنامه
+// در تابع init
 init() {
     this.updateTime();
     setInterval(() => this.updateTime(), 1000);
+    
+    // اعمال فونت ذخیره شده
+    this.applyFontFamily();
     
     this.loadTodayRecords();
     this.loadMonthlyReport();
@@ -1719,8 +1789,7 @@ init() {
     this.createAutoCleanupModal();
     this.createInstallGuideModal();
     this.createConfirmExitModal();
-    console.log('createConfirmClearAllModal:', typeof this.createConfirmClearAllModal);
-    this.createConfirmClearAllModal(); // اضافه کردن این خط
+    this.createConfirmClearAllModal();
     
     this.manageStorage();
     
@@ -2042,6 +2111,44 @@ loadMonthlyReport() {
     }
 }
 
+// تابع برای بررسی بارگذاری فونت
+checkFontLoading() {
+    const fontFamily = this.settings.fontFamily || 'AsaGity';
+    
+    if (fontFamily !== 'system') {
+        // بررسی اینکه فونت بارگذاری شده است یا نه
+        setTimeout(() => {
+            const isFontLoaded = this.isFontLoaded(fontFamily);
+            if (!isFontLoaded) {
+                console.warn(`فونت ${fontFamily} بارگذاری نشد، استفاده از فونت fallback`);
+                document.body.classList.add('font-loading');
+            } else {
+                document.body.classList.remove('font-loading');
+            }
+        }, 1000);
+    }
+}
+
+// تابع برای تشخیص بارگذاری فونت
+isFontLoaded(fontFamily) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    const text = 'FontTest';
+    const baseFont = 'Arial, sans-serif';
+    const testFont = `${fontFamily}, ${baseFont}`;
+    
+    // اندازه متن با فونت base
+    context.font = `72px ${baseFont}`;
+    const baseSize = context.measureText(text).width;
+    
+    // اندازه متن با فونت تست
+    context.font = `72px ${testFont}`;
+    const testSize = context.measureText(text).width;
+    
+    return baseSize !== testSize;
+}
+
 // بارگذاری گزارش سالانه با فرمت ساعت و دقیقه
 loadYearlyReport() {
     const yearlyData = {};
@@ -2290,6 +2397,9 @@ saveSettings() {
             dailyHours: parseInt(document.getElementById('dailyHours').value) || 8,
             workDaysPerWeek: parseInt(document.getElementById('workDaysPerWeek').value) || 6,
             overtimeThreshold: parseInt(document.getElementById('overtimeThreshold').value) || 15,
+            fontFamily: document.getElementById('fontFamily').value || 'AsaGity',
+            currencyUnit: document.getElementById('currencyUnit').value || 'rial',
+            timeFormat: document.getElementById('timeFormat').value || '24h',
             currencyUnit: document.getElementById('currencyUnit').value || 'rial',
             timeFormat: document.getElementById('timeFormat').value || '24h',
             autoWifiEnabled: document.getElementById('autoWifiCheck') ? document.getElementById('autoWifiCheck').checked : false,
@@ -2307,6 +2417,10 @@ saveSettings() {
 
         this.settings = { ...this.settings, ...newSettings };
         this.saveToStorage('attendanceSettings', this.settings);
+
+                
+        // اعمال فونت جدید
+        this.applyFontFamily();
         
         // reset کردن flag تغییرات
         this.settingsChanged = false;
@@ -2710,7 +2824,7 @@ formatHours(hours) {
 
 
 
-// ایجاد بخش تنظیمات نمایش
+// در تابع createDisplaySettingsSection
 createDisplaySettingsSection() {
     const displaySection = document.createElement('div');
     displaySection.className = 'settings-section';
@@ -2718,14 +2832,26 @@ createDisplaySettingsSection() {
         <h3>تنظیمات نمایش</h3>
         
         <div class="form-group">
+            <label class="form-label" for="fontFamily">فونت نرم‌افزار</label>
+            <select class="form-control" id="fontFamily">
+                <option value="AsaGity">فونت یکان (پیشفرض)</option>
+                <option value="AsaGity2">فونت وزیر</option>
+                <option value="AsaGity3">فونت صمیم</option>
+                <option value="AsaGity4">فونت تنها</option>
+                <option value="AsaGity5">فونت شبنم</option>
+                <option value="system">سیستم پیشفرض</option>
+            </select>
+            <small id="fontFamilyHelp" class="form-text text-muted">
+                انتخاب فونت بر روی تمام متن‌های نرم‌افزار تأثیر می‌گذارد.
+            </small>
+        </div>
+        
+        <div class="form-group">
             <label class="form-label" for="currencyUnit">واحد پول</label>
             <select class="form-control" id="currencyUnit">
                 <option value="rial">ریال</option>
                 <option value="toman">تومان</option>
             </select>
-            <small id="currencyUnitHelp" class="form-text text-muted">
-                انتخاب واحد پول بر روی تمام نمایش‌های مبلغ در نرم‌افزار تأثیر می‌گذارد.
-            </small>
         </div>
         
         <div class="form-group">
@@ -2734,26 +2860,22 @@ createDisplaySettingsSection() {
                 <option value="24h">24 ساعته</option>
                 <option value="12h">12 ساعته (صبح/عصر)</option>
             </select>
-            <small id="timeFormatHelp" class="form-text text-muted">
-                انتخاب فرمت زمان بر روی تمام نمایش‌های زمان در نرم‌افزار تأثیر می‌گذارد.
-            </small>
         </div>
         
         <div class="form-group">
-            <label class="form-label">واحد فعلی نمایش مبالغ:</label>
-            <div style="padding: 10px; background: var(--background); border-radius: var(--radius);">
-                <strong id="currentCurrencyExample">${this.formatCurrency(100000)}</strong>
-                <br>
-                <small>نمونه نمایش مبلغ با واحد فعلی</small>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">فرمت فعلی نمایش زمان:</label>
-            <div style="padding: 10px; background: var(--background); border-radius: var(--radius);">
-                <strong id="currentTimeExample">${this.formatTime('14:30:00')}</strong>
-                <br>
-                <small>نمونه نمایش زمان با فرمت فعلی</small>
+            <label class="form-label">نمونه نمایش فعلی:</label>
+            <div style="padding: 15px; background: var(--background); border-radius: var(--radius); border: 1px solid var(--border);">
+                <div id="fontPreview" style="font-size: 16px; line-height: 1.6;">
+                    <div style="font-weight: normal; margin-bottom: 8px;">
+                        این یک نمونه متن با فونت فعلی است
+                    </div>
+                    <div style="font-weight: bold;">
+                        این یک نمونه متن با وزن bold است
+                    </div>
+                    <div style="margin-top: 8px; font-size: 14px; color: var(--text-light);">
+                        متن زیرنویس با سایز کوچک‌تر
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -2761,16 +2883,73 @@ createDisplaySettingsSection() {
     document.getElementById('settingsForm').appendChild(displaySection);
     
     // تنظیم مقادیر فعلی
+    document.getElementById('fontFamily').value = this.settings.fontFamily || 'AsaGity';
     document.getElementById('currencyUnit').value = this.settings.currencyUnit || 'rial';
     document.getElementById('timeFormat').value = this.settings.timeFormat || '24h';
     
-    // به‌روزرسانی نمونه‌ها هنگام تغییر تنظیمات
+    // به‌روزرسانی نمونه فونت هنگام تغییر
+    document.getElementById('fontFamily').addEventListener('change', () => {
+        this.updateFontPreview();
+        document.getElementById('currentCurrencyExample').textContent = this.formatCurrency(100000);
+        document.getElementById('currentTimeExample').textContent = this.formatTime('14:30:00');
+    });
+    
     document.getElementById('currencyUnit').addEventListener('change', () => {
         document.getElementById('currentCurrencyExample').textContent = this.formatCurrency(100000);
     });
     
     document.getElementById('timeFormat').addEventListener('change', () => {
         document.getElementById('currentTimeExample').textContent = this.formatTime('14:30:00');
+    });
+    
+    // به‌روزرسانی اولیه نمونه‌ها
+    this.updateFontPreview();
+}
+
+// تابع به‌روزرسانی پیش‌نمایش فونت
+updateFontPreview() {
+    const fontFamily = document.getElementById('fontFamily').value;
+    const previewElement = document.getElementById('fontPreview');
+    
+    if (fontFamily === 'system') {
+        previewElement.style.fontFamily = 'inherit';
+    } else {
+        previewElement.style.fontFamily = fontFamily;
+    }
+}
+
+
+// تابع اعمال فونت بر روی کل نرم‌افزار
+// تابع بهبود یافته اعمال فونت
+applyFontFamily() {
+    const fontFamily = this.settings.fontFamily || 'AsaGity';
+    
+    // حذف attribute قبلی
+    document.body.removeAttribute('data-font');
+    
+    if (fontFamily === 'system') {
+        document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+    } else {
+        document.body.style.fontFamily = `${fontFamily}, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif`;
+        document.body.setAttribute('data-font', fontFamily);
+    }
+    
+    // اعمال فونت بر روی المان‌های خاص
+    this.applyFontToElements(fontFamily);
+    
+    console.log('فونت اعمال شد:', fontFamily);
+}
+
+// تابع برای اعمال فونت بر روی المان‌های خاص
+applyFontToElements(fontFamily) {
+    const elements = document.querySelectorAll('body, .btn, .form-control, .modal-content, table, th, td');
+    
+    elements.forEach(element => {
+        if (fontFamily === 'system') {
+            element.style.fontFamily = 'inherit';
+        } else {
+            element.style.fontFamily = `${fontFamily}, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif`;
+        }
     });
 }
 
@@ -3453,7 +3632,4 @@ if (window.location.protocol === 'https:' || window.location.hostname === 'local
 </script>
 <footer><p style="background:rgb(50, 63, 252);font-size:15px;text-align: center;color: #ffffff;height:max-content;">Create With ❤️ By Odiv</p></footer>
 </body>
-
 </html>
-
-
