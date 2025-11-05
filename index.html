@@ -5,13 +5,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="حضور و غیاب">
-<link rel="apple-touch-icon" href="images/yellow.png">
+<link rel="apple-touch-icon" href="Images/LogoHozor256.png">
 <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نرم افزار حضور و غیاب آساگیتی</title>
     <!-- در بخش head، بعد از تگ title این خط را اضافه کنید -->
-<link rel="icon" href="images/yellow.png" type="image/png">
+<link rel="icon" href="Images/LogoHozor256.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -925,6 +925,30 @@ table th {
         transform: scale(1);
     }
 }
+
+    footer {
+        margin-top: auto;
+        background: linear-gradient(90deg, #4361ee, #3f37c9);
+        color: white;
+        text-align: center;
+        padding: 15px 10px;
+        font-size: 15px;
+        box-shadow: 0 -3px 10px rgba(0,0,0,0.15);
+        letter-spacing: 0.5px;
+    }
+
+    .heart {
+        color: #f72585;
+        display: inline-block;
+        animation: pulse 1.4s infinite;
+        transform-origin: center;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.25); }
+        100% { transform: scale(1); }
+    }
     </style>
 </head>
 <body>
@@ -3630,6 +3654,8 @@ if (window.location.protocol === 'https:' || window.location.hostname === 'local
   window.addEventListener('load', registerServiceWorker);
 }
 </script>
-<footer><p style="background:rgb(50, 63, 252);font-size:15px;text-align: center;color: #ffffff;height:max-content;">Create With ❤️ By Odiv</p></footer>
+<footer>
+    Create With <span class="heart">❤️</span> By Odiv
+</footer>
 </body>
 </html>
