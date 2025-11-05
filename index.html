@@ -26,25 +26,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --stop:rgb(255, 153, 0);
-            --start:rgb(0, 255, 170);
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --info: #4895ef;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --background: #f5f7fb;
-            --card-bg: #ffffff;
-            --text: #333333;
-            --text-light: #6c757d;
-            --border: #dee2e6;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
-        }
+        .theme-system {
+    /* از متغیرهای اصلی root استفاده می‌کند */
+    /* هیچ تغییری اعمال نمی‌شود تا حالت پیشفرض حفظ شود */
+}
+
+/* متغیرهای اصلی (حالت پیشفرض) */
+:root {
+    --primary: #4361ee;
+    --secondary: #3f37c9;
+    --stop: rgb(255, 153, 0);
+    --start: rgb(0, 255, 170);
+    --success: #4cc9f0;
+    --danger: #f72585;
+    --warning: #f8961e;
+    --info: #4895ef;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --background: #f5f7fb;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --text-light: #6c757d;
+    --border: #dee2e6;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --radius: 12px;
+}
 
 
          @font-face {
@@ -402,6 +408,76 @@ body.font-loading {
     flex-direction: row-reverse;
 }
 
+/* استایل برای دکمه نمایش/پنهان گزارش‌ها */
+.reports-toggle-container {
+    text-align: center;
+    margin: 20px 0;
+    padding: 0 20px;
+}
+
+.reports-toggle-btn {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+    justify-content: center;
+}
+
+.reports-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.reports-toggle-btn .fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.reports-toggle-btn.collapsed .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+
+/* استایل برای tab-container با انیمیشن */
+.tab-container {
+    transition: all 0.4s ease-in-out;
+    overflow: hidden;
+    max-height: 2000px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tab-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+    margin: 0;
+    padding: 0;
+}
+
+/* بهبود نمایش تب‌ها وقتی مخفی هستند */
+.tab-container.collapsed .tabs,
+.tab-container.collapsed .tab-content {
+    display: none;
+}
+
+/* انیمیشن برای action-buttons */
+.action-buttons {
+    transition: all 0.3s ease;
+}
+
+.tab-container.collapsed + .action-buttons {
+    opacity: 0.7;
+    transform: scale(0.98);
+}
+
+
 @keyframes pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(76, 201, 240, 0.7);
@@ -456,6 +532,7 @@ body.font-loading {
 
         .status-out {
             background-color: var(--danger);
+            animation: pulse 2s infinite;
         }
 
         .stats {
@@ -808,6 +885,22 @@ body.pwa-installed header {
 
         @media (max-width: 768px) {
 
+    .reports-toggle-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        min-width: 180px;
+    }
+    
+    .reports-toggle-container {
+        margin: 15px 0;
+        padding: 0 10px;
+    }
+    
+    .tab-container {
+        transition: all 0.3s ease-in-out;
+    }
+
+
                 .main-card {
         min-height: 350px;
         padding: 20px;
@@ -844,6 +937,18 @@ body.pwa-installed header {
         }
 
         @media (max-width: 480px) {
+
+    .reports-toggle-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        min-width: 160px;
+        gap: 8px;
+    }
+    
+    .reports-toggle-container {
+        margin: 10px 0;
+    }
+
 
                 .modal-content {
         padding: 20px;
@@ -906,6 +1011,147 @@ body.pwa-installed header {
         height: 14px;
     }
         }
+
+
+        /* استایل برای دکمه‌های بازیابی */
+.restore-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.restore-btn {
+    padding: 10px 15px;
+    border: 2px solid;
+    background: transparent;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+}
+
+.restore-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: var(--text-light);
+    border-color: var(--border);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--border);
+    color: var(--text);
+}
+
+/* بهبود responsive */
+@media (max-width: 768px) {
+    .restore-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+}
+
+/* انیمیشن پس‌زمینه */
+.background-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* ذرات شناور */
+.floating-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.particle {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+.particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+.particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+.particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+.particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+.particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+.particle:nth-child(7) { left: 70%; animation-delay: 6s; }
+.particle:nth-child(8) { left: 80%; animation-delay: 7s; }
+.particle:nth-child(9) { left: 90%; animation-delay: 8s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+/* امواج */
+.waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: wave 8s linear infinite;
+}
+
+@keyframes wave {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* گرادیان متحرک */
+.gradient-move {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        rgba(67, 97, 238, 0.1) 0%,
+        rgba(76, 201, 240, 0.1) 25%,
+        rgba(76, 201, 240, 0.05) 50%,
+        rgba(67, 97, 238, 0.1) 75%,
+        rgba(67, 97, 238, 0.1) 100%
+    );
+    animation: gradientShift 15s ease infinite;
+    transform: rotate(45deg);
+}
+
+@keyframes gradientShift {
+    0%, 100% { transform: rotate(45deg) translateX(0%); }
+    50% { transform: rotate(45deg) translateX(-50%); }
+}
+
+/* حالت غیرفعال */
+.background-animation.disabled {
+    display: none;
+}
 
         /* اسکرول بار زیبا */
 .modal-content::-webkit-scrollbar {
@@ -1068,6 +1314,101 @@ table th {
     }
 }
 
+
+/* تم بهاری */
+.theme-spring {
+    --primary: #4CAF50;
+    --secondary: #388E3C;
+    --background: #f1f8e9;
+    --card-bg: #ffffff;
+    --text: #2e7d32;
+    --text-light: #4caf50;
+    --border: #c8e6c9;
+}
+
+.theme-spring .btn-primary {
+    background: linear-gradient(135deg, #4CAF50, #388E3C);
+}
+
+/* تم تابستانی */
+.theme-summer {
+    --primary: #FF9800;
+    --secondary: #F57C00;
+    --background: #fff3e0;
+    --card-bg: #ffffff;
+    --text: #e65100;
+    --text-light: #ff9800;
+    --border: #ffe0b2;
+}
+
+.theme-summer .btn-primary {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+}
+
+/* تم پاییزی */
+.theme-autumn {
+    --primary: #FF5722;
+    --secondary: #D84315;
+    --background: #fbe9e7;
+    --card-bg: #ffffff;
+    --text: #bf360c;
+    --text-light: #ff5722;
+    --border: #ffccbc;
+}
+
+.theme-autumn .btn-primary {
+    background: linear-gradient(135deg, #FF5722, #D84315);
+}
+
+/* تم زمستانی */
+.theme-winter {
+    --primary: #2196F3;
+    --secondary: #1976D2;
+    --background: #e3f2fd;
+    --card-bg: #ffffff;
+    --text: #0d47a1;
+    --text-light: #2196f3;
+    --border: #bbdefb;
+}
+
+.theme-winter .btn-primary {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+/* استایل برای کدها */
+pre {
+    direction: ltr;
+    text-align: left;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 5px 0;
+}
+
+code {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #e83e8c;
+}
+
+/* استایل برای لیست‌ها */
+ul {
+    margin: 8px 0;
+    padding-right: 20px;
+}
+
+li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
     footer {
         margin-top: auto;
         background: linear-gradient(90deg, #4361ee, #3f37c9);
@@ -1172,6 +1513,13 @@ table th {
     </style>
 </head>
 <body>
+    <!-- انیمیشن پس‌زمینه -->
+    <div class="background-animation" id="backgroundAnimation">
+        <div class="floating-particles" id="floatingParticles"></div>
+        <div class="gradient-move"></div>
+        <div class="waves"></div>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo">
@@ -1225,7 +1573,14 @@ table th {
         </div>
     </div>
 </div>
-
+<!-- دکمه نمایش/پنهان گزارش‌ها -->
+<div class="reports-toggle-container">
+    <button class="btn btn-secondary reports-toggle-btn" id="reportsToggleBtn">
+        <i class="fas fa-chart-bar"></i>
+        <span id="reportsToggleText">نمایش گزارش‌ها</span>
+        <i class="fas fa-chevron-down" id="reportsToggleIcon"></i>
+    </button>
+</div>
         <div class="tab-container">
             <div class="tabs">
                 <div class="tab active" data-tab="today">امروز</div>
@@ -1469,40 +1824,35 @@ function toJalaliMonthYear(dateString) {
         // کلاس اصلی برنامه
         class AttendanceApp {
 constructor() {
-    this.records = this.loadFromStorage('attendanceRecords') || [];
-    this.settings = this.loadFromStorage('attendanceSettings') || this.getDefaultSettings();
+    // ابتدا همه properties رو تعریف کنید
+    this.records = [];
+    this.settings = this.getDefaultSettings();
     this.currentStatus = 'out';
     this.currentCheckInTime = null;
     this.settingsChanged = false;
-    this.backupHistory = this.loadFromStorage('backupHistory') || [];
-    this.fileSystemAccess = null; // دسترسی به فایل سیستم
-    this.backupDirectory = null; // پوشه پشتیبان‌ها
+    
+    // سیستم ذخیره‌سازی چندلایه
+    this.storageLayers = ['localStorage', 'indexedDB', 'sessionStorage'];
+    this.backupVersion = '3.0';
+    this.db = null;
+    
+    // مقداردهی اولیه backupHistory با بررسی وجود قبلی
+    this.backupHistory = [];
     
     this.init();
 }
 
-// تشخیص قابلیت‌های ذخیره‌سازی فایل
+
+// راه‌اندازی سیستم فایل
 async initFileSystem() {
     try {
-        // بررسی پشتیبانی مرورگر از File System Access API
-        if ('showDirectoryPicker' in window) {
-            this.fileSystemAccess = 'modern';
-            console.log('File System Access API پشتیبانی می‌شود');
-        } 
-        // بررسی پشتیبانی از IndexedDB برای ذخیره فایل
-        else if ('indexedDB' in window) {
-            this.fileSystemAccess = 'indexedDB';
-            console.log('IndexedDB برای ذخیره فایل پشتیبانی می‌شود');
-        }
-        // fallback به localStorage
-        else {
-            this.fileSystemAccess = 'localStorage';
-            console.log('استفاده از localStorage برای ذخیره فایل');
+        // فقط از قابلیت‌های پایه مرورگر استفاده می‌کنیم
+        if ('storage' in navigator && 'persist' in navigator.storage) {
+            const isPersisted = await navigator.storage.persist();
+            console.log('ذخیره‌سازی پایدار:', isPersisted);
         }
         
-        // بارگذاری آخرین پوشه پشتیبان از تنظیمات
-        await this.loadBackupDirectory();
-        
+        this.fileSystemAccess = 'indexedDB'; // تمرکز روی IndexedDB
     } catch (error) {
         console.error('خطا در راه‌اندازی سیستم فایل:', error);
         this.fileSystemAccess = 'localStorage';
@@ -1570,6 +1920,130 @@ async saveBackupToFile(backupData) {
         default:
             await this.saveWithLocalStorage(backupData, filename);
     }
+}
+
+// ذخیره با localStorage (fallback)
+async saveWithLocalStorage(backupData, filename) {
+    const backupList = this.loadFromStorage('fileBackups') || [];
+    backupList.unshift({
+        filename,
+        data: backupData,
+        timestamp: Date.now()
+    });
+    
+    // محدود کردن تعداد
+    if (backupList.length > this.settings.autoBackup.maxBackups) {
+        backupList.splice(this.settings.autoBackup.maxBackups);
+    }
+    
+    this.saveToStorage('fileBackups', backupList);
+    console.log(`پشتیبان در localStorage ذخیره شد: ${filename}`);
+}
+
+// صادرات همه پشتیبان‌ها
+exportAllBackups() {
+    try {
+        const exportData = {
+            backupHistory: this.backupHistory || [],
+            currentRecords: this.records || [],
+            currentSettings: this.settings || this.getDefaultSettings(),
+            exportDate: new Date().toISOString(),
+            totalBackups: (this.backupHistory || []).length,
+            version: 'advanced'
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        this.downloadFile(dataBlob, `attendance-complete-backup-${this.getTodayDate()}.json`);
+        this.showNotification('✅ همه پشتیبان‌ها با موفقیت صادر شدند', 'success');
+        
+    } catch (error) {
+        console.error('خطا در صادرات همه پشتیبان‌ها:', error);
+        this.showNotification('❌ خطا در صادرات پشتیبان‌ها', 'error');
+    }
+}
+
+// متصل کردن event listenerهای جدول پشتیبان
+attachBackupTableEventListeners() {
+    document.querySelectorAll('.restore-backup').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const index = parseInt(e.target.closest('button').dataset.index);
+            this.restoreFromBackup(index);
+        });
+    });
+    
+    document.querySelectorAll('.download-backup').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const index = parseInt(e.target.closest('button').dataset.index);
+            this.downloadBackupFile(this.backupHistory[index]);
+        });
+    });
+    
+    document.querySelectorAll('.delete-backup').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const index = parseInt(e.target.closest('button').dataset.index);
+            this.deleteBackup(index);
+        });
+    })
+}
+
+// دانلود فایل پشتیبان
+downloadBackupFile(backupData, showNotification = true) {
+    const timestamp = new Date(backupData.backupTimestamp).toISOString()
+        .replace(/[:.]/g, '-')
+        .replace('T', '_')
+        .split('+')[0];
+    
+    const filename = `attendance-backup-${timestamp}.json`;
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    this.downloadFile(dataBlob, filename);
+    
+    if (showNotification) {
+        this.showNotification('✅ فایل پشتیبان دانلود شد', 'success');
+    }
+}
+
+// حذف پشتیبان
+deleteBackup(index) {
+    const backup = this.backupHistory[index];
+    if (!backup) return;
+    
+    if (confirm(`آیا از حذف این پشتیبان اطمینان دارید؟\nتاریخ: ${new Date(backup.backupTimestamp).toLocaleString('fa-IR')}`)) {
+        this.backupHistory.splice(index, 1);
+        this.saveToStorage('backupHistory', this.backupHistory);
+        
+        this.showNotification('✅ پشتیبان با موفقیت حذف شد', 'success');
+        this.loadBackupHistoryTable();
+        this.updateBackupStatus();
+    }
+}
+
+// آماده‌سازی داده‌های پشتیبان
+prepareBackupData(reason) {
+    return {
+        records: [...this.records],
+        settings: {...this.settings},
+        backupDate: new Date().toISOString(),
+        backupTimestamp: Date.now(),
+        reason: reason,
+        version: '2.0',
+        deviceInfo: this.getBasicDeviceInfo()
+    };
+}
+
+// دریافت اطلاعات پایه دستگاه (بدون async)
+getBasicDeviceInfo() {
+    return {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        screen: `${screen.width}x${screen.height}`,
+        timestamp: Date.now()
+    };
 }
 
 // ذخیره با File System Access API (مدرن)
@@ -1661,6 +2135,28 @@ async smartRecovery() {
     }
 }
 
+// پیدا کردن هر پشتیبان فایل
+async findFileBackup() {
+    try {
+        // اولویت ۱: File System Access API
+        if (this.fileSystemAccess === 'modern') {
+            const backup = await this.findLatestFileBackupModern();
+            if (backup) return backup;
+        }
+        
+        // اولویت ۲: IndexedDB
+        if (this.fileSystemAccess === 'indexedDB') {
+            const backup = await this.findLatestFileBackupIndexedDB();
+            if (backup) return backup;
+        }
+        
+        return null;
+    } catch (error) {
+        console.warn('خطا در پیدا کردن پشتیبان فایل:', error);
+        return null;
+    }
+}
+
 // پیدا کردن آخرین پشتیبان معتبر
 async findLatestValidBackup() {
     // ۱. بررسی تاریخچه پشتیبان‌ها
@@ -1690,6 +2186,94 @@ async findLatestValidBackup() {
     return { success: false };
 }
 
+// پیدا کردن آخرین پشتیبان فایل
+async findLatestFileBackup() {
+    try {
+        switch (this.fileSystemAccess) {
+            case 'modern':
+                return await this.findLatestFileBackupModern();
+            case 'indexedDB':
+                return await this.findLatestFileBackupIndexedDB();
+            default:
+                return null;
+        }
+    } catch (error) {
+        console.warn('خطا در جستجوی فایل پشتیبان:', error);
+        return null;
+    }
+}
+
+// پیدا کردن پشتیبان در IndexedDB
+async findLatestFileBackupIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('AttendanceBackups', 1);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            const db = request.result;
+            const transaction = db.transaction(['backups'], 'readonly');
+            const store = transaction.objectStore('backups');
+            const getAllRequest = store.getAll();
+            
+            getAllRequest.onsuccess = () => {
+                const backups = getAllRequest.result;
+                if (backups.length === 0) {
+                    resolve(null);
+                    return;
+                }
+                
+                // مرتب کردن بر اساس زمان (جدیدترین اول)
+                backups.sort((a, b) => b.timestamp - a.timestamp);
+                resolve(backups[0].data);
+            };
+            
+            getAllRequest.onerror = () => reject(getAllRequest.error);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('backups')) {
+                db.createObjectStore('backups', { keyPath: 'filename' });
+            }
+        };
+    });
+}
+
+
+// پیدا کردن پشتیبان در File System API
+async findLatestFileBackupModern() {
+    if (!this.backupDirectory) return null;
+    
+    try {
+        const files = [];
+        for await (const entry of this.backupDirectory.values()) {
+            if (entry.kind === 'file' && entry.name.startsWith('attendance-backup-')) {
+                const file = await entry.getFile();
+                const content = await file.text();
+                const backupData = JSON.parse(content);
+                
+                if (this.validateBackup(backupData)) {
+                    files.push({
+                        data: backupData,
+                        timestamp: backupData.backupTimestamp,
+                        name: entry.name
+                    });
+                }
+            }
+        }
+        
+        if (files.length === 0) return null;
+        
+        // مرتب کردن بر اساس زمان (جدیدترین اول)
+        files.sort((a, b) => b.timestamp - a.timestamp);
+        return files[0].data;
+        
+    } catch (error) {
+        console.warn('خطا در خواندن فایل‌های پشتیبان:', error);
+        return null;
+    }
+}
+
 // اعتبارسنجی پشتیبان
 validateBackup(backupData) {
     try {
@@ -1701,6 +2285,152 @@ validateBackup(backupData) {
                (Date.now() - backupData.backupTimestamp) < (30 * 24 * 60 * 60 * 1000); // کمتر از 30 روز
     } catch (error) {
         return false;
+    }
+}
+
+// بازیابی از پشتیبان پیشرفته (فرمت جدید)
+async restoreFromAdvancedBackup(file) {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const backupData = JSON.parse(e.target.result);
+            
+            // اعتبارسنجی فرمت پیشرفته
+            if (!this.validateAdvancedBackup(backupData)) {
+                throw new Error('فرمت فایل پشتیبان پیشرفته معتبر نیست');
+            }
+            
+            if (confirm('آیا از بازیابی این پشتیبان پیشرفته اطمینان دارید؟ داده‌های فعلی overwrite خواهند شد.')) {
+                this.restoreAdvancedBackupData(backupData);
+            }
+        } catch (error) {
+            this.showNotification('خطا در بازیابی پشتیبان پیشرفته: ' + error.message, 'error');
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+// اعتبارسنجی پشتیبان پیشرفته
+validateAdvancedBackup(backupData) {
+    return backupData && 
+           backupData.backupHistory && 
+           Array.isArray(backupData.backupHistory) &&
+           backupData.exportDate &&
+           backupData.version;
+}
+
+// بازیابی داده‌های پشتیبان پیشرفته
+restoreAdvancedBackupData(backupData) {
+    try {
+        // بازیابی تاریخچه پشتیبان‌ها
+        if (backupData.backupHistory && backupData.backupHistory.length > 0) {
+            this.backupHistory = backupData.backupHistory;
+            this.saveToStorage('backupHistory', this.backupHistory);
+            
+            // استفاده از آخرین پشتیبان برای بازیابی داده‌ها
+            const latestBackup = backupData.backupHistory[0];
+            this.records = latestBackup.records || [];
+            this.settings = latestBackup.settings || this.getDefaultSettings();
+        }
+        
+        // ذخیره داده‌های بازیابی شده
+        this.saveToStorage('attendanceRecords', this.records);
+        this.saveToStorage('attendanceSettings', this.settings);
+        
+        this.showNotification('✅ پشتیبان پیشرفته با موفقیت بازیابی شد', 'success');
+        
+        // به روزرسانی همه بخش‌ها
+        this.init();
+        
+    } catch (error) {
+        console.error('خطا در بازیابی پشتیبان پیشرفته:', error);
+        this.showNotification('❌ خطا در بازیابی پشتیبان پیشرفته', 'error');
+    }
+}
+
+// بازیابی از پشتیبان ساده (فرمت قدیمی)
+async restoreFromSimpleBackup(file) {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const backupData = JSON.parse(e.target.result);
+            
+            // اعتبارسنجی فرمت ساده
+            if (!this.validateSimpleBackup(backupData)) {
+                throw new Error('فرمت فایل پشتیبان ساده معتبر نیست');
+            }
+            
+            if (confirm('آیا از بازیابی این پشتیبان ساده اطمینان دارید؟ داده‌های فعلی overwrite خواهند شد.')) {
+                this.restoreSimpleBackupData(backupData);
+            }
+        } catch (error) {
+            this.showNotification('خطا در بازیابی پشتیبان ساده: ' + error.message, 'error');
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+
+// اعتبارسنجی پشتیبان ساده
+validateSimpleBackup(backupData) {
+    return backupData && 
+           backupData.records && 
+           Array.isArray(backupData.records) &&
+           backupData.settings;
+}
+
+// بازیابی داده‌های پشتیبان ساده
+restoreSimpleBackupData(backupData) {
+    try {
+        this.records = backupData.records || [];
+        this.settings = backupData.settings || this.getDefaultSettings();
+        
+        // ذخیره داده‌های بازیابی شده
+        this.saveToStorage('attendanceRecords', this.records);
+        this.saveToStorage('attendanceSettings', this.settings);
+        
+        this.showNotification('✅ پشتیبان ساده با موفقیت بازیابی شد', 'success');
+        
+        // به روزرسانی همه بخش‌ها
+        this.init();
+        
+    } catch (error) {
+        console.error('خطا در بازیابی پشتیبان ساده:', error);
+        this.showNotification('❌ خطا در بازیابی پشتیبان ساده', 'error');
+    }
+}
+
+
+
+
+async restoreFromBackupData(backupData) {
+    try {
+        if (!backupData || !this.validateBackup(backupData)) {
+            throw new Error('داده‌های پشتیبان نامعتبر هستند');
+        }
+        
+        // بازیابی رکوردها
+        if (backupData.records && Array.isArray(backupData.records)) {
+            this.records = backupData.records;
+            this.saveToStorage('attendanceRecords', this.records);
+        }
+        
+        // بازیابی تنظیمات
+        if (backupData.settings) {
+            this.settings = { ...this.getDefaultSettings(), ...backupData.settings };
+            this.saveToStorage('attendanceSettings', this.settings);
+        }
+        
+        console.log('✅ بازیابی از پشتیبان با موفقیت انجام شد');
+        return true;
+        
+    } catch (error) {
+        console.error('خطا در بازیابی از پشتیبان:', error);
+        throw error;
     }
 }
 
@@ -1788,54 +2518,43 @@ addToBackupHistory(backupData) {
 }
 
 // پشتیبان‌گیری پس از ثبت خروج
-checkInOut() {
-    const now = new Date();
-    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                      now.getMinutes().toString().padStart(2, '0') + ':' + 
-                      now.getSeconds().toString().padStart(2, '0');
-    const dateString = this.getTodayDate();
-    
-    if (this.currentStatus === 'out') {
-        // ثبت ورود
-        this.records.push({
-            id: Date.now(),
-            type: 'in',
-            time: timeString,
-            date: dateString,
-            timestamp: now.getTime()
-        });
+    checkInOut() {
+        const now = new Date();
+        const timeString = now.toTimeString().split(' ')[0];
+        const dateString = this.getTodayDate();
         
-        this.currentStatus = 'in';
-        this.currentCheckInTime = timeString;
-        this.updateCheckButton('خروج', 'in');
-        this.showNotification('ورود شما با موفقیت ثبت شد', 'success');
-    } else {
-        // ثبت خروج
-        this.records.push({
-            id: Date.now(),
-            type: 'out',
-            time: timeString,
-            date: dateString,
-            timestamp: now.getTime()
-        });
-        
-        this.currentStatus = 'out';
-        this.updateCheckButton('ورود', 'out');
-        this.showNotification('خروج شما با موفقیت ثبت شد', 'success');
-        
-        // پشتیبان‌گیری خودکار پس از خروج
-        if (this.settings.autoBackup.enabled && this.settings.autoBackup.onCheckOut) {
-            setTimeout(() => {
-                this.autoBackup('after_checkout');
-                this.showNotification('✅ پشتیبان‌گیری خودکار انجام شد', 'success');
-            }, 1000);
+        if (this.currentStatus === 'out') {
+            this.records.push({
+                id: Date.now(),
+                type: 'in',
+                time: timeString,
+                date: dateString,
+                timestamp: now.getTime()
+            });
+            
+            this.currentStatus = 'in';
+            this.currentCheckInTime = timeString;
+            this.updateCheckButton('خروج', 'in');
+            this.showNotification('ورود شما با موفقیت ثبت شد', 'success');
+        } else {
+            this.records.push({
+                id: Date.now(),
+                type: 'out',
+                time: timeString,
+                date: dateString,
+                timestamp: now.getTime()
+            });
+            
+            this.currentStatus = 'out';
+            this.updateCheckButton('ورود', 'out');
+            this.showNotification('خروج شما با موفقیت ثبت شد', 'success');
         }
+        
+        // ذخیره فوری
+        this.autoSave();
+        this.loadTodayRecords();
+        this.updateStats();
     }
-    
-    this.saveToStorage('attendanceRecords', this.records);
-    this.loadTodayRecords();
-    this.updateStats();
-}
 
 // مدیریت بستن صفحه و پشتیبان‌گیری
 setupAutoBackupOnExit() {
@@ -1900,18 +2619,43 @@ async secureFileBackup(backupData) {
     await this.saveBackupToFile(backupData);
 }
 
-// به‌روزرسانی وضعیت پشتیبان‌ها
+// به‌روزرسانی وضعیت پشتیبان‌ها - نسخه ایمن
 updateBackupStatus() {
-    const backupCount = this.backupHistory.length;
-    const lastBackup = this.backupHistory[0];
-    const totalSize = JSON.stringify(this.backupHistory).length / 1024;
-    
-    document.getElementById('backupCount').textContent = backupCount;
-    document.getElementById('lastBackupTime').textContent = lastBackup ? 
-        new Date(lastBackup.backupTimestamp).toLocaleString('fa-IR') : '-';
-    document.getElementById('totalBackupSize').textContent = totalSize.toFixed(2) + ' KB';
+    try {
+        // بررسی وجود المان‌های DOM
+        const backupCountElement = document.getElementById('backupCount');
+        const lastBackupTimeElement = document.getElementById('lastBackupTime');
+        const totalBackupSizeElement = document.getElementById('totalBackupSize');
+        
+        if (!backupCountElement || !lastBackupTimeElement || !totalBackupSizeElement) {
+            console.warn('المان‌های وضعیت پشتیبان پیدا نشدند');
+            return;
+        }
+        
+        // استفاده از backupHistory با مقدار پیشفرض
+        const backupHistory = this.backupHistory || [];
+        const backupCount = backupHistory.length;
+        const lastBackup = backupHistory[0];
+        
+        // محاسبه حجم با بررسی خطا
+        let totalSize = 0;
+        try {
+            totalSize = JSON.stringify(backupHistory).length / 1024;
+        } catch (error) {
+            console.warn('خطا در محاسبه حجم پشتیبان‌ها:', error);
+            totalSize = 0;
+        }
+        
+        // به‌روزرسانی DOM
+        backupCountElement.textContent = backupCount.toLocaleString('fa-IR');
+        lastBackupTimeElement.textContent = lastBackup ? 
+            new Date(lastBackup.backupTimestamp).toLocaleString('fa-IR') : '---';
+        totalBackupSizeElement.textContent = totalSize.toFixed(2) + ' KB';
+        
+    } catch (error) {
+        console.error('خطا در به‌روزرسانی وضعیت پشتیبان‌ها:', error);
+    }
 }
-
 
 // ایجاد مودال تاریخچه پشتیبان‌ها
 createBackupHistoryModal() {
@@ -1969,12 +2713,12 @@ createBackupHistoryModal() {
     });
 }
 
-// ایجاد بخش پیشرفته مدیریت پشتیبان
+// ایجاد بخش مدیریت پیشرفته پشتیبان‌ها
 createAdvancedBackupSection() {
     const advancedSection = document.createElement('div');
     advancedSection.className = 'settings-section';
     advancedSection.innerHTML = `
-        <h3>🔄 مدیریت پیشرفته پشتیبان‌ها</h3>
+        <h3>⚙️ مدیریت پیشرفته پشتیبان‌ها</h3>
         
         <div class="form-group">
             <label class="form-label">سیستم ذخیره‌سازی فعلی</label>
@@ -1999,13 +2743,16 @@ createAdvancedBackupSection() {
         </div>
         
         <div class="form-group">
-            <label class="form-label">تنظیمات پیشرفته</label>
+            <label class="form-label">عملیات پیشرفته</label>
             <div class="action-buttons">
                 <button type="button" class="btn btn-warning" id="exportAllDataBtn">
                     <i class="fas fa-file-export"></i> خروجی کامل داده‌ها
                 </button>
                 <button type="button" class="btn btn-success" id="importDataBtn">
                     <i class="fas fa-file-import"></i> وارد کردن داده‌ها
+                </button>
+                <button type="button" class="btn btn-info" id="backupFormatGuideBtn">
+                    <i class="fas fa-question-circle"></i> راهنمای فرمت‌ها
                 </button>
             </div>
         </div>
@@ -2025,21 +2772,139 @@ createAdvancedBackupSection() {
     // به‌روزرسانی وضعیت
     this.updateStorageStatus();
     
-    // event listeners
-    document.getElementById('selectFolderBtn').addEventListener('click', async () => {
-        await this.selectBackupDirectory();
-        this.updateStorageStatus();
-    });
-    
-    document.getElementById('resetFolderBtn').addEventListener('click', async () => {
-        this.backupDirectory = null;
-        this.settings.backupDirectory = null;
-        this.saveToStorage('attendanceSettings', this.settings);
-        this.showNotification('✅ پوشه پشتیبان بازنشانی شد', 'success');
-        this.updateStorageStatus();
-    });
+    // event listeners با بررسی ایمن
+    setTimeout(() => {
+        this.attachAdvancedBackupEventListeners();
+    }, 0);
 }
 
+
+// متصل کردن event listeners برای بخش پیشرفته - نسخه ایمن
+attachAdvancedBackupEventListeners() {
+    try {
+        // دکمه انتخاب پوشه
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
+        if (selectFolderBtn) {
+            selectFolderBtn.addEventListener('click', async () => {
+                await this.selectBackupDirectory();
+                this.updateStorageStatus();
+            });
+        }
+        
+        // دکمه بازنشانی پوشه
+        const resetFolderBtn = document.getElementById('resetFolderBtn');
+        if (resetFolderBtn) {
+            resetFolderBtn.addEventListener('click', async () => {
+                this.backupDirectory = null;
+                this.settings.backupDirectory = null;
+                this.saveToStorage('attendanceSettings', this.settings);
+                this.showNotification('✅ پوشه پشتیبان بازنشانی شد', 'success');
+                this.updateStorageStatus();
+            });
+        }
+        
+        // دکمه خروجی کامل داده‌ها
+        const exportAllDataBtn = document.getElementById('exportAllDataBtn');
+        if (exportAllDataBtn) {
+            exportAllDataBtn.addEventListener('click', () => {
+                this.exportAllBackups();
+            });
+        }
+        
+        // دکمه وارد کردن داده‌ها
+        const importDataBtn = document.getElementById('importDataBtn');
+        if (importDataBtn) {
+            importDataBtn.addEventListener('click', () => {
+                // استفاده از فایل ورودی موجود در بخش مدیریت داده‌ها
+                const restoreAdvancedFile = document.getElementById('restoreAdvancedFile');
+                if (restoreAdvancedFile) {
+                    restoreAdvancedFile.click();
+                } else {
+                    this.showNotification('❌ المان ورودی فایل پیدا نشد', 'error');
+                }
+            });
+        }
+        
+        // دکمه راهنمای فرمت‌ها
+        const backupFormatGuideBtn = document.getElementById('backupFormatGuideBtn');
+        if (backupFormatGuideBtn) {
+            backupFormatGuideBtn.addEventListener('click', () => {
+                this.showBackupFormatGuide();
+            });
+        }
+        
+    } catch (error) {
+        console.error('خطا در متصل کردن event listeners بخش پیشرفته:', error);
+    }
+}
+
+// تست سیستم پشتیبان
+async testBackupSystem() {
+    try {
+        this.showNotification('🔄 در حال تست سیستم پشتیبان...', 'info');
+        
+        // تست پشتیبان‌گیری
+        const testBackup = await this.createTestBackup();
+        
+        // تست بازیابی
+        const testRestore = await this.testRestoreSystem();
+        
+        // تست فایل سیستم
+        const fsTest = await this.testFileSystem();
+        
+        let message = 'نتایج تست سیستم پشتیبان:\n\n';
+        message += `✅ پشتیبان‌گیری: ${testBackup ? 'موفق' : 'ناموفق'}\n`;
+        message += `✅ بازیابی: ${testRestore ? 'موفق' : 'ناموفق'}\n`;
+        message += `✅ فایل سیستم: ${fsTest ? 'در دسترس' : 'محدود'}\n`;
+        message += `🔧 نوع سیستم: ${this.fileSystemAccess}\n`;
+        message += `💾 پشتیبان‌های موجود: ${this.backupHistory.length}`;
+        
+        alert(message);
+        this.showNotification('✅ تست سیستم پشتیبان کامل شد', 'success');
+        
+    } catch (error) {
+        console.error('خطا در تست سیستم پشتیبان:', error);
+        this.showNotification('❌ خطا در تست سیستم پشتیبان', 'error');
+    }
+}
+
+// ایجاد پشتیبان تست
+async createTestBackup() {
+    const testData = {
+        records: [{ id: 1, type: 'in', time: '08:00:00', date: this.getTodayDate(), timestamp: Date.now() }],
+        settings: this.settings,
+        backupDate: new Date().toISOString(),
+        backupTimestamp: Date.now(),
+        reason: 'test',
+        version: '2.0'
+    };
+    
+    await this.saveBackupToFile(testData);
+    return true;
+}
+
+// تست سیستم بازیابی
+async testRestoreSystem() {
+    try {
+        const recovery = await this.smartRecovery();
+        return recovery.success;
+    } catch (error) {
+        return false;
+    }
+}
+
+// تست فایل سیستم
+async testFileSystem() {
+    try {
+        if (this.fileSystemAccess === 'modern') {
+            const testDir = await navigator.storage.getDirectory();
+            return true;
+        }
+        return this.fileSystemAccess !== 'localStorage';
+    } catch (error) {
+        return false;
+    }
+}
 
 // نمایش تاریخچه پشتیبان‌ها
 showBackupHistory() {
@@ -2108,12 +2973,45 @@ getBackupReasonText(reason) {
     return reasons[reason] || reason;
 }
 
-// ایجاد پشتیبان دستی
+// ایجاد پشتیبان دستی - نسخه ایمن
 createManualBackup() {
-    this.autoBackup('manual');
-    this.showNotification('✅ پشتیبان دستی با موفقیت ایجاد شد', 'success');
-    this.loadBackupHistoryTable();
-    this.updateBackupStatus();
+    try {
+        console.log('📦 ایجاد پشتیبان دستی...');
+        
+        const backupData = {
+            records: [...(this.records || [])],
+            settings: {...(this.settings || this.getDefaultSettings())},
+            backupDate: new Date().toISOString(),
+            backupTimestamp: Date.now(),
+            reason: 'manual',
+            version: this.backupVersion || '3.0'
+        };
+        
+        // اضافه کردن به تاریخچه
+        if (!this.backupHistory) {
+            this.backupHistory = [];
+        }
+        this.backupHistory.unshift(backupData);
+        
+        // محدود کردن تعداد
+        const maxBackups = (this.settings.autoBackup && this.settings.autoBackup.maxBackups) || 10;
+        if (this.backupHistory.length > maxBackups) {
+            this.backupHistory = this.backupHistory.slice(0, maxBackups);
+        }
+        
+        // ذخیره تاریخچه
+        this.saveToStorage('backupHistory', this.backupHistory);
+        
+        // به‌روزرسانی وضعیت
+        this.updateBackupStatus();
+        
+        this.showNotification('✅ پشتیبان دستی با موفقیت ایجاد شد', 'success');
+        console.log('پشتیبان دستی ایجاد شد');
+        
+    } catch (error) {
+        console.error('خطا در ایجاد پشتیبان دستی:', error);
+        this.showNotification('❌ خطا در ایجاد پشتیبان', 'error');
+    }
 }
 
 // بازیابی از پشتیبان
@@ -2133,21 +3031,28 @@ restoreFromBackup(backupIndex) {
     }
 }
 
-// پاکسازی پشتیبان‌های قدیمی
+// پاکسازی پشتیبان‌های قدیمی - نسخه ایمن
 cleanupOldBackups() {
-    const maxBackups = this.settings.autoBackup.maxBackups;
-    if (this.backupHistory.length <= maxBackups) {
-        this.showNotification('❌ هیچ پشتیبان قدیمی برای پاکسازی وجود ندارد', 'info');
-        return;
+    try {
+        const backupHistory = this.backupHistory || [];
+        const maxBackups = (this.settings.autoBackup && this.settings.autoBackup.maxBackups) || 10;
+        
+        if (backupHistory.length <= maxBackups) {
+            this.showNotification('❌ هیچ پشتیبان قدیمی برای پاکسازی وجود ندارد', 'info');
+            return;
+        }
+        
+        const deletedCount = backupHistory.length - maxBackups;
+        this.backupHistory = backupHistory.slice(0, maxBackups);
+        this.saveToStorage('backupHistory', this.backupHistory);
+        
+        this.showNotification(`✅ ${deletedCount} پشتیبان قدیمی پاک شد`, 'success');
+        this.updateBackupStatus();
+        
+    } catch (error) {
+        console.error('خطا در پاکسازی پشتیبان‌های قدیمی:', error);
+        this.showNotification('❌ خطا در پاکسازی پشتیبان‌ها', 'error');
     }
-    
-    const deletedCount = this.backupHistory.length - maxBackups;
-    this.backupHistory = this.backupHistory.slice(0, maxBackups);
-    this.saveToStorage('backupHistory', this.backupHistory);
-    
-    this.showNotification(`✅ ${deletedCount} پشتیبان قدیمی پاک شد`, 'success');
-    this.updateBackupStatus();
-    this.loadBackupHistoryTable();
 }
 
 
@@ -2509,39 +3414,37 @@ isInWorkingHours(currentHour, currentMinutes) {
 
             
             // تنظیمات پیشفرض
-    getDefaultSettings() {
-        return {
-            hourlyRate: 50000,
-            overtimeRate: 75000,
-            dailyHours: 8,
-            workDaysPerWeek: 6,
-            overtimeThreshold: 15,
-            fontFamily: 'AsaGity', // فونت پیشفرض
-            currencyUnit: 'rial',
-            timeFormat: '24h',
+getDefaultSettings() {
+    return {
+        hourlyRate: 50000,
+        overtimeRate: 75000,
+        dailyHours: 8,
+        workDaysPerWeek: 6,
+        overtimeThreshold: 15,
+        fontFamily: 'AsaGity',
+        theme: 'system', // system, auto, spring, summer, autumn, winter
+        enableBackgroundAnimation: true,
+        currencyUnit: 'rial',
+        timeFormat: '24h',
         autoBackup: {
             enabled: true,
-            // سیستم سریع
             onExit: true,
             onCheckOut: true,
             maxBackups: 10,
-            // سیستم امن
-            useFileSystem: true,
-            backupLocation: 'auto', // 'auto', 'local', 'file'
-            compression: true
+            backupLocation: 'auto'
         },
-            autoWifiEnabled: false,
-            workWifis: ['AsaGity-Fiber', 'AsaGity-shatel', 'Local-WiFi'],
-            autoCheckInHours: '8:00-10:00',
-            autoCheckOutHours: '13:30-18:00',
-            autoCleanup: {
-                enabled: false,
-                keepMonths: 12,
-                maxSizeMB: 5,
-                notifyWhenFull: true
-            }
-        };
-    }
+        autoWifiEnabled: false,
+        workWifis: ['AsaGity-Fiber', 'AsaGity-shatel', 'Local-WiFi'],
+        autoCheckInHours: '8:00-10:00',
+        autoCheckOutHours: '13:30-18:00',
+        autoCleanup: {
+            enabled: false,
+            keepMonths: 12,
+            maxSizeMB: 5,
+            notifyWhenFull: true
+        }
+    };
+}
 
 // تابع بهبود یافته برای فرمت‌بندی مبلغ
 formatCurrency(amount) {
@@ -2863,55 +3766,911 @@ openAutoCleanupModal() {
 }
 
 
-            // مقداردهی اولیه برنامه
-// در تابع init
+
 async init() {
-    console.log('🚀 راه‌اندازی هوشمند نرم‌افزار...');
+    console.log('🚀 راه‌اندازی سیستم هوشمند حضور و غیاب...');
     
-    // راه‌اندازی سیستم فایل
-    await this.initFileSystem();
-    
-    // بازیابی هوشمند داده‌ها
-    const recovery = await this.smartRecovery();
-    console.log('نتیجه بازیابی:', recovery);
-    
-    // به‌روزرسانی وضعیت بازیابی در UI
-    this.updateRecoveryStatus(recovery);
-    
-    // ادامه راه‌اندازی عادی
-    this.updateTime();
-    setInterval(() => this.updateTime(), 1000);
-    
-    this.applyFontFamily();
-    
-    this.loadTodayRecords();
-    this.loadMonthlyReport();
-    this.loadYearlyReport();
-    this.updateStats();
-    
-    this.setupEventListeners();
-    this.applySavedTheme();
-    this.checkCurrentStatus();
-    
-    // ایجاد مودال‌ها
-    this.createEditModal();
-    this.createAutoCleanupModal();
-    this.createInstallGuideModal();
-    this.createConfirmExitModal();
-    this.createConfirmClearAllModal();
-    this.createBackupHistoryModal();
-    
-    // راه‌اندازی سیستم‌های خودکار
-    this.setupPWAInstallPrompt();
-    this.setupAutoBackupOnExit();
-    this.checkIfPWAInstalled();
-    
-    this.manageStorage();
-    
-    if (this.settings.autoCleanup && this.settings.autoCleanup.enabled) {
-        this.runAutoCleanup();
+    try {
+        // اولویت: بازیابی از حافظه موقت
+        await this.initializeStorage();
+        
+        // بارگذاری backupHistory از localStorage
+        this.loadBackupHistory();
+        
+        // ایجاد مودال‌های ضروری
+        this.createEssentialModals();
+        
+        // بازیابی داده‌ها از چندین منبع
+        const recoveryResult = await this.multiLayerRecovery();
+        console.log('نتیجه بازیابی:', recoveryResult);
+        
+        // ادامه راه‌اندازی عادی
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
+        
+        this.applyFontFamily();
+        
+        this.loadTodayRecords();
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
+        this.updateStats();
+        
+        this.setupEventListeners();
+        this.applySavedTheme();
+        this.checkCurrentStatus();
+        
+        // راه‌اندازی سیستم‌های خودکار
+        this.setupPWAInstallPrompt();
+        this.setupAutoBackupOnExit();
+        this.checkIfPWAInstalled();
+        
+        // راه‌اندازی دکمه نمایش گزارش‌ها
+        this.setupReportsToggle();
+        
+        // اعمال تم و انیمیشن (با تاخیر برای اطمینان از ایجاد DOM)
+        setTimeout(() => {
+            this.applyTheme();
+            this.toggleBackgroundAnimation(this.settings.enableBackgroundAnimation !== false);
+        }, 100);
+        
+        this.manageStorage();
+        
+        if (this.settings.autoCleanup && this.settings.autoCleanup.enabled) {
+            this.runAutoCleanup();
+        }
+        
+        console.log('✅ سیستم با موفقیت راه‌اندازی شد');
+        
+    } catch (error) {
+        console.error('❌ خطا در راه‌اندازی سیستم:', error);
+        this.showNotification('خطا در راه‌اندازی سیستم', 'error');
     }
 }
+// ایجاد مودال‌های ضروری - نسخه ایمن
+createEssentialModals() {
+    try {
+        console.log('🛠️ ایجاد مودال‌های ضروری...');
+        
+        const modals = [
+            { name: 'Edit', method: () => this.createEditModal() },
+            { name: 'AutoCleanup', method: () => this.createAutoCleanupModal() },
+            { name: 'InstallGuide', method: () => this.createInstallGuideModal() },
+            { name: 'ConfirmExit', method: () => this.createConfirmExitModal() },
+            { name: 'ConfirmClearAll', method: () => this.createConfirmClearAllModal() },
+            { name: 'BackupHistory', method: () => this.createBackupHistoryModal() },
+            { name: 'BackupFormatGuide', method: () => this.createBackupFormatGuideModal() }
+        ];
+        
+        modals.forEach(modal => {
+            try {
+                modal.method();
+                console.log(`✅ مودال ${modal.name} ایجاد شد`);
+            } catch (error) {
+                console.error(`❌ خطا در ایجاد مودال ${modal.name}:`, error);
+            }
+        });
+        
+        console.log('✅ تمام مودال‌های ضروری ایجاد شدند');
+        
+    } catch (error) {
+        console.error('خطا در ایجاد مودال‌های ضروری:', error);
+    }
+}
+
+// اعمال تم اولیه بدون وابستگی به DOM
+applyInitialTheme() {
+    try {
+        const theme = this.settings.theme || 'auto';
+        const actualTheme = theme === 'auto' ? this.getCurrentSeason() : theme;
+        
+        // حذف تم‌های قبلی
+        document.body.classList.remove('theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter');
+        
+        // اضافه کردن تم جدید
+        if (actualTheme !== 'auto') {
+            document.body.classList.add(`theme-${actualTheme}`);
+        }
+        
+        // تغییر رنگ PWA
+        this.updatePWAThemeColor(actualTheme);
+        
+        console.log('✅ تم اولیه اعمال شد:', actualTheme);
+        
+    } catch (error) {
+        console.error('خطا در اعمال تم اولیه:', error);
+    }
+}
+
+// ایجاد مودال راهنمای فرمت پشتیبان (بدون نمایش)
+createBackupFormatGuideModal() {
+    // اگر مودال از قبل وجود دارد، خروج
+    if (document.getElementById('backupFormatGuideModal')) {
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'backupFormatGuideModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">📁 راهنمای فرمت‌های پشتیبان</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">💾</div>
+                    <h3 style="color: var(--primary);">انواع پشتیبان‌گیری</h3>
+                </div>
+                
+                <!-- پشتیبان ساده -->
+                <div class="install-step">
+                    <h4 style="color: #28a745;">🟢 پشتیبان ساده</h4>
+                    <div class="step-content">
+                        <div class="step" style="background: #28a745;">۱</div>
+                        <div><strong>داده‌های ذخیره شده:</strong> رکوردهای فعلی و تنظیمات</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #28a745;">۲</div>
+                        <div><strong>حجم:</strong> کم</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #28a745;">۳</div>
+                        <div><strong>مناسب برای:</strong> انتقال سریع و روزمره</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #28a745;">۴</div>
+                        <div><strong>فرمت فایل:</strong> <code>attendance-simple-backup-YYYY-MM-DD.json</code></div>
+                    </div>
+                </div>
+                
+                <!-- پشتیبان پیشرفته -->
+                <div class="install-step" style="margin-top: 25px;">
+                    <h4 style="color: #17a2b8;">🔵 پشتیبان پیشرفته</h4>
+                    <div class="step-content">
+                        <div class="step" style="background: #17a2b8;">۱</div>
+                        <div><strong>داده‌های ذخیره شده:</strong> تمام تاریخچه پشتیبان‌ها + داده‌های فعلی</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #17a2b8;">۲</div>
+                        <div><strong>حجم:</strong> بیشتر (بسته به تاریخچه)</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #17a2b8;">۳</div>
+                        <div><strong>مناسب برای:</strong> نگهداری بلندمدت و بایگانی</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step" style="background: #17a2b8;">۴</div>
+                        <div><strong>فرمت فایل:</strong> <code>attendance-advanced-backup-YYYY-MM-DD.json</code></div>
+                    </div>
+                </div>
+
+                <!-- نکات مهم -->
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; border-right: 4px solid #ffc107;">
+                    <h4 style="color: #856404; margin-top: 0;">💡 نکات مهم:</h4>
+                    <ul style="color: #856404; margin-bottom: 0; padding-right: 20px;">
+                        <li>پشتیبان پیشرفته شامل تمام تاریخچه می‌شود و برای بازیابی کامل بهتر است</li>
+                        <li>پشتیبان ساده فقط برای انتقال داده‌های فعلی مناسب است</li>
+                        <li>پشتیبان پیشرفته قابل تبدیل به ساده است، اما برعکس ممکن نیست</li>
+                        <li>برای امنیت بیشتر، هر دو نوع پشتیبان را نگهداری کنید</li>
+                    </ul>
+                </div>
+
+                <!-- نمونه ساختار -->
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <h4 style="color: #004085; margin-top: 0;">📋 نمونه ساختار فایل‌ها:</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <strong>پشتیبان ساده:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 4px; font-size: 12px; direction: ltr; text-align: left;">
+{
+  "records": [...],
+  "settings": {...},
+  "backupDate": "..."
+}</pre>
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <strong>پشتیبان پیشرفته:</strong>
+                            <pre style="background: white; padding: 10px; border-radius: 4px; font-size: 12px; direction: ltr; text-align: left;">
+{
+  "backupHistory": [...],
+  "currentRecords": [...],
+  "exportDate": "...",
+  "version": "advanced"
+}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنمای انتخاب -->
+                <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
+                    <strong>🎯 کدام پشتیبان را انتخاب کنم؟</strong>
+                    <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px; background: white; padding: 10px; border-radius: 6px;">
+                            <strong>پشتیبان ساده انتخاب کنید اگر:</strong>
+                            <ul style="text-align: right; margin: 8px 0; padding-right: 15px;">
+                                <li>می‌خواهید داده‌ها را به سیستم دیگری منتقل کنید</li>
+                                <li>حجم فایل برای شما مهم است</li>
+                                <li>نیاز به پشتیبان روزانه دارید</li>
+                            </ul>
+                        </div>
+                        <div style="flex: 1; min-width: 200px; background: white; padding: 10px; border-radius: 6px;">
+                            <strong>پشتیبان پیشرفته انتخاب کنید اگر:</strong>
+                            <ul style="text-align: right; margin: 8px 0; padding-right: 15px;">
+                                <li>می‌خواهید تمام تاریخچه حفظ شود</li>
+                                <li>برای بایگانی بلندمدت نیاز دارید</li>
+                                <li>می‌خواهید از تمام داده‌ها محافظت کنید</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" id="closeBackupFormatGuide">
+                    <i class="fas fa-check"></i> متوجه شدم
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // event listener برای بستن مودال
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    document.getElementById('closeBackupFormatGuide').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    // بستن با کلیک خارج از مودال
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+// نمایش راهنمای فرمت‌های پشتیبان
+showBackupFormatGuide() {
+    if (!document.getElementById('backupFormatGuideModal')) {
+        this.createBackupFormatGuideModal();
+    }
+    document.getElementById('backupFormatGuideModal').style.display = 'flex';
+}
+
+
+    // سیستم ذخیره‌سازی چندلایه
+    async initializeStorage() {
+        try {
+            // راه‌اندازی IndexedDB
+            await this.initIndexedDB();
+            
+            // راه‌اندازی سیستم فایل (اگر در دسترس باشد)
+            await this.initFileSystem();
+            
+            console.log('✅ سیستم ذخیره‌سازی چندلایه راه‌اندازی شد');
+        } catch (error) {
+            console.error('خطا در راه‌اندازی ذخیره‌سازی:', error);
+        }
+    }
+
+    // پشتیبان‌گیری لحظه‌ای
+    setupRealTimeBackup() {
+        // پشتیبان‌گیری پس از هر تغییر
+        const originalPush = Array.prototype.push;
+        const self = this;
+        
+        // نظارت بر تغییرات آرایه records
+        this.records = new Proxy(this.records, {
+            set(target, property, value) {
+                target[property] = value;
+                
+                // ذخیره فوری پس از تغییر
+                setTimeout(() => {
+                    self.autoSave();
+                }, 100);
+                
+                return true;
+            }
+        });
+
+        // پشتیبان‌گیری دوره‌ای هر 30 ثانیه
+        setInterval(() => {
+            this.autoSave();
+        }, 30000);
+
+        // پشتیبان‌گیری هنگام از دست دادن فوکوس
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.autoSave();
+            }
+        });
+
+        // پشتیبان‌گیری قبل از بسته شدن صفحه
+        window.addEventListener('beforeunload', () => {
+            this.createEmergencyBackup();
+        });
+    }
+
+// ذخیره خودکار - نسخه ایمن‌تر
+async autoSave() {
+    try {
+        // ابتدا در localStorage ذخیره کن (همیشه کار می‌کند)
+        await this.saveToLocalStorage();
+        
+        // سپس در IndexedDB با مدیریت خطا
+        try {
+            await this.saveToIndexedDB();
+        } catch (idbError) {
+            console.warn('خطا در ذخیره IndexedDB، ادامه با localStorage:', idbError);
+        }
+        
+        // پشتیبان اضطراری در صورت نیاز
+        if (this.shouldCreateEmergencyBackup()) {
+            await this.createEmergencyBackup();
+        }
+    } catch (error) {
+        console.warn('خطا در ذخیره خودکار:', error);
+    }
+}
+
+// بررسی قابلیت serialization داده‌ها
+checkDataSerializability() {
+    try {
+        JSON.stringify(this.records);
+        JSON.stringify(this.settings);
+        return true;
+    } catch (error) {
+        console.error('داده‌ها قابل serialization نیستند:', error);
+        return false;
+    }
+}
+
+// تعمیر داده‌های غیرقابل serialization
+repairNonSerializableData() {
+    console.log('🔧 تعمیر داده‌های غیرقابل serialization...');
+    
+    try {
+        // اگر records مشکل دارد
+        if (!this.checkDataSerializability()) {
+            this.records = this.records.map(record => this.simplifyObject(record));
+            this.settings = this.simplifyObject(this.settings);
+        }
+        
+        console.log('✅ داده‌ها تعمیر شدند');
+        return true;
+    } catch (error) {
+        console.error('❌ خطا در تعمیر داده‌ها:', error);
+        return false;
+    }
+}
+
+    // نظارت بر حافظه
+    setupStorageMonitoring() {
+        // بررسی سلامت ذخیره‌سازی هر 1 دقیقه
+        setInterval(async () => {
+            await this.checkStorageHealth();
+        }, 60000);
+
+        // نظارت بر quota
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+            navigator.storage.estimate().then((estimate) => {
+                const used = estimate.usage / estimate.quota;
+                if (used > 0.8) {
+                    this.cleanupOldBackups();
+                }
+            });
+        }
+    }
+
+
+    // بارگذاری تاریخچه پشتیبان‌ها
+loadBackupHistory() {
+    try {
+        const savedHistory = this.loadFromStorage('backupHistory');
+        if (savedHistory && Array.isArray(savedHistory)) {
+            this.backupHistory = savedHistory;
+        } else {
+            this.backupHistory = [];
+        }
+        console.log(`📊 تاریخچه پشتیبان‌ها بارگذاری شد: ${this.backupHistory.length} پشتیبان`);
+    } catch (error) {
+        console.error('خطا در بارگذاری تاریخچه پشتیبان‌ها:', error);
+        this.backupHistory = [];
+    }
+}
+
+        // راه‌اندازی IndexedDB
+    async initIndexedDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('AttendanceDB', 3);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                
+                // ایجاد store برای رکوردها
+                if (!db.objectStoreNames.contains('records')) {
+                    const recordsStore = db.createObjectStore('records', { keyPath: 'id' });
+                    recordsStore.createIndex('date', 'date', { unique: false });
+                    recordsStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+                
+                // ایجاد store برای تنظیمات
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'id' });
+                }
+                
+                // ایجاد store برای پشتیبان‌ها
+                if (!db.objectStoreNames.contains('backups')) {
+                    const backupsStore = db.createObjectStore('backups', { keyPath: 'timestamp' });
+                    backupsStore.createIndex('type', 'type', { unique: false });
+                }
+            };
+        });
+    }
+shouldCreateEmergencyBackup() {
+    // اگر داده‌ها زیاد شده‌اند یا زمان زیادی از آخرین پشتیبان گذشته
+    const lastBackup = this.loadFromStorage('lastBackupTime') || 0;
+    const timeSinceLastBackup = Date.now() - lastBackup;
+    const shouldBackup = timeSinceLastBackup > 5 * 60 * 1000; // 5 دقیقه
+    
+    if (shouldBackup) {
+        this.saveToStorage('lastBackupTime', Date.now());
+    }
+    
+    return shouldBackup;
+}
+
+
+
+    // بازیابی چندلایه
+    async multiLayerRecovery() {
+        console.log('🔄 شروع بازیابی چندلایه...');
+        
+        const recoveryAttempts = [
+            { name: 'localStorage', method: () => this.recoverFromLocalStorage() },
+            { name: 'indexedDB', method: () => this.recoverFromIndexedDB() },
+            { name: 'sessionStorage', method: () => this.recoverFromSessionStorage() },
+            { name: 'fileSystem', method: () => this.recoverFromFileSystem() }
+        ];
+
+        for (let attempt of recoveryAttempts) {
+            try {
+                console.log(`تلاش برای بازیابی از ${attempt.name}...`);
+                const result = await attempt.method();
+                
+                if (result.success) {
+                    console.log(`✅ بازیابی از ${attempt.name} موفق بود`);
+                    
+                    // همگام‌سازی با سایر لایه‌ها
+                    await this.syncToAllLayers();
+                    
+                    return {
+                        success: true,
+                        source: attempt.name,
+                        recordsCount: this.records.length,
+                        message: `داده‌ها از ${attempt.name} بازیابی شدند`
+                    };
+                }
+            } catch (error) {
+                console.warn(`خطا در بازیابی از ${attempt.name}:`, error);
+            }
+        }
+
+        // اگر هیچکدام کار نکرد، از تنظیمات پیشفرض استفاده کن
+        console.log('⚠️ هیچ داده‌ای برای بازیابی پیدا نشد، استفاده از تنظیمات پیشفرض');
+        await this.initializeWithDefaults();
+        
+        return {
+            success: true,
+            source: 'default',
+            recordsCount: 0,
+            message: 'برنامه با تنظیمات پیشفرض راه‌اندازی شد'
+        };
+
+    }
+
+
+  // همگام‌سازی با تمام لایه‌ها
+async syncToAllLayers() {
+    try {
+        const syncPromises = [
+            this.saveToLocalStorage(),
+            this.saveToIndexedDB(),
+            this.saveToSessionStorage()
+        ];
+        
+        await Promise.allSettled(syncPromises);
+        console.log('✅ همگام‌سازی کامل انجام شد');
+    } catch (error) {
+        console.error('خطا در همگام‌سازی:', error);
+    }
+}
+
+
+        // ذخیره در localStorage
+    async saveToLocalStorage() {
+        this.saveToStorage('attendanceRecords', this.records);
+        this.saveToStorage('attendanceSettings', this.settings);
+    }
+
+// ذخیره در IndexedDB - نسخه اصلاح شده
+async saveToIndexedDB() {
+    if (!this.db) return;
+
+    return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction(['records', 'settings'], 'readwrite');
+        const recordsStore = transaction.objectStore('records');
+        const settingsStore = transaction.objectStore('settings');
+        
+        // پاک کردن رکوردهای قدیمی
+        recordsStore.clear();
+        
+        // اضافه کردن رکوردهای جدید (ساده‌شده)
+        this.records.forEach(record => {
+            const simpleRecord = this.simplifyObject(record);
+            recordsStore.add(simpleRecord);
+        });
+        
+        // ذخیره تنظیمات (ساده‌شده)
+        const simpleSettings = this.simplifyObject(this.settings);
+        settingsStore.put({ id: 'main', data: simpleSettings });
+        
+        transaction.oncomplete = () => {
+            console.log('✅ داده‌ها در IndexedDB ذخیره شدند');
+            resolve();
+        };
+        transaction.onerror = () => {
+            console.error('خطا در ذخیره IndexedDB:', transaction.error);
+            reject(transaction.error);
+        };
+    });
+}
+
+
+// ذخیره در sessionStorage
+saveToSessionStorage() {
+    try {
+        const emergencyData = {
+            records: this.records,
+            settings: this.settings,
+            timestamp: Date.now(),
+            version: this.backupVersion,
+            type: 'emergency'
+        };
+        sessionStorage.setItem('emergencyBackup', JSON.stringify(emergencyData));
+        return true;
+    } catch (error) {
+        console.error('خطا در ذخیره sessionStorage:', error);
+        return false;
+    }
+}
+
+        // راه‌اندازی با تنظیمات پیشفرض
+    async initializeWithDefaults() {
+        this.records = [];
+        this.settings = this.getDefaultSettings();
+        await this.syncToAllLayers();
+    }
+
+// پشتیبان اضطراری - نسخه اصلاح شده
+async createEmergencyBackup() {
+    try {
+        // ایجاد یک کپی ساده و قابل serialization از داده‌ها
+        const backupData = {
+            records: this.simplifyData(this.records),
+            settings: this.simplifyData(this.settings),
+            timestamp: Date.now(),
+            version: this.backupVersion,
+            type: 'emergency'
+        };
+
+        // ذخیره در sessionStorage برای بازیابی سریع
+        sessionStorage.setItem('emergencyBackup', JSON.stringify(backupData));
+        
+        // ذخیره در IndexedDB با مدیریت خطا
+        if (this.db) {
+            try {
+                const transaction = this.db.transaction(['backups'], 'readwrite');
+                const store = transaction.objectStore('backups');
+                
+                // استفاده از structured clone برای اطمینان از قابلیت serialization
+                const cloneableData = this.createCloneableBackup(backupData);
+                await store.put(cloneableData);
+                
+                console.log('✅ پشتیبان اضطراری در IndexedDB ذخیره شد');
+            } catch (idbError) {
+                console.error('خطا در ذخیره IndexedDB:', idbError);
+                // ادامه می‌دهیم چون در sessionStorage ذخیره شده
+            }
+        }
+
+        console.log('✅ پشتیبان اضطراری ایجاد شد');
+    } catch (error) {
+        console.error('خطا در ایجاد پشتیبان اضطراری:', error);
+    }
+}
+
+// ساده‌سازی داده‌ها برای جلوگیری از DataCloneError
+simplifyData(data) {
+    try {
+        if (Array.isArray(data)) {
+            return data.map(item => this.simplifyObject(item));
+        } else if (data && typeof data === 'object') {
+            return this.simplifyObject(data);
+        }
+        return data;
+    } catch (error) {
+        console.warn('خطا در ساده‌سازی داده‌ها:', error);
+        return Array.isArray(data) ? [] : {};
+    }
+}
+
+// ساده‌سازی یک شیء
+simplifyObject(obj) {
+    const simpleObj = {};
+    
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+            
+            // حذف مقادیر غیرقابل serialization
+            if (value === undefined || value === null) {
+                continue;
+            }
+            
+            if (typeof value === 'function') {
+                continue; // توابع را نادیده بگیر
+            }
+            
+            if (typeof value === 'object' && !(value instanceof Date)) {
+                if (Array.isArray(value)) {
+                    simpleObj[key] = value.map(item => 
+                        typeof item === 'object' && item !== null ? 
+                        this.simplifyObject(item) : item
+                    );
+                } else {
+                    simpleObj[key] = this.simplifyObject(value);
+                }
+            } else {
+                simpleObj[key] = value;
+            }
+        }
+    }
+    
+    return simpleObj;
+}
+
+// ایجاد پشتیبان قابل کلون
+createCloneableBackup(backupData) {
+    return {
+        records: JSON.parse(JSON.stringify(backupData.records)),
+        settings: JSON.parse(JSON.stringify(backupData.settings)),
+        timestamp: backupData.timestamp,
+        version: backupData.version,
+        type: backupData.type
+    };
+}
+
+        // بررسی سلامت ذخیره‌سازی
+    async checkStorageHealth() {
+        try {
+            const checks = [
+                this.checkLocalStorage(),
+                this.checkIndexedDB(),
+                this.checkSessionStorage()
+            ];
+
+            const results = await Promise.allSettled(checks);
+            const healthy = results.every(result => result.status === 'fulfilled' && result.value);
+            
+            if (!healthy) {
+                console.warn('⚠️ مشکل در ذخیره‌سازی تشخیص داده شد');
+                await this.repairStorage();
+            }
+        } catch (error) {
+            console.error('خطا در بررسی سلامت ذخیره‌سازی:', error);
+        }
+    }
+
+    // بازیابی از sessionStorage (پشتیبان اضطراری)
+// بازیابی از sessionStorage
+async recoverFromSessionStorage() {
+    try {
+        const savedData = sessionStorage.getItem('attendanceData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            if (this.validateBackup(data)) {
+                this.records = data.records || [];
+                this.settings = data.settings || this.getDefaultSettings();
+                return { success: true };
+            }
+        }
+        return { success: false };
+    } catch (error) {
+        return { success: false, error };
+    }
+}
+
+// بررسی سلامت localStorage
+checkLocalStorage() {
+    try {
+        // تست نوشتن و خواندن
+        const testKey = 'healthCheck_' + Date.now();
+        const testValue = 'test_value';
+        
+        localStorage.setItem(testKey, testValue);
+        const retrievedValue = localStorage.getItem(testKey);
+        localStorage.removeItem(testKey);
+        
+        return retrievedValue === testValue;
+    } catch (error) {
+        return false;
+    }
+}
+
+// بازیابی از File System
+async recoverFromFileSystem() {
+    // در حال حاضر از File System API استفاده نمی‌کنیم
+    return { success: false };
+}
+
+
+// تعمیر ذخیره‌سازی
+async repairStorage() {
+    console.log('🔧 شروع تعمیر ذخیره‌سازی...');
+    
+    try {
+        // پاک کردن localStorage مشکل‌دار
+        try {
+            localStorage.removeItem('attendanceRecords');
+            localStorage.removeItem('attendanceSettings');
+        } catch (e) {}
+        
+        // باز کردن مجدد IndexedDB
+        if (this.db) {
+            this.db.close();
+        }
+        await this.initIndexedDB();
+        
+        // ذخیره‌سازی مجدد داده‌ها
+        await this.syncToAllLayers();
+        
+        console.log('✅ تعمیر ذخیره‌سازی کامل شد');
+        return true;
+    } catch (error) {
+        console.error('❌ خطا در تعمیر ذخیره‌سازی:', error);
+        return false;
+    }
+
+}
+
+
+// بررسی سلامت IndexedDB
+async checkIndexedDB() {
+    return new Promise((resolve) => {
+        if (!this.db) {
+            resolve(false);
+            return;
+        }
+        
+        const transaction = this.db.transaction(['records'], 'readonly');
+        transaction.onerror = () => resolve(false);
+        transaction.oncomplete = () => resolve(true);
+        
+        // فقط تراکنش رو شروع کن
+        const store = transaction.objectStore('records');
+        store.count(); // یک عمل ساده برای تست
+    });
+}
+
+
+// بررسی سلامت sessionStorage
+checkSessionStorage() {
+    try {
+        const testKey = 'healthCheck_' + Date.now();
+        const testValue = 'test_value';
+        
+        sessionStorage.setItem(testKey, testValue);
+        const retrievedValue = sessionStorage.getItem(testKey);
+        sessionStorage.removeItem(testKey);
+        
+        return retrievedValue === testValue;
+    } catch (error) {
+        return false;
+    }
+}
+
+    // اعتبارسنجی پشتیبان
+    validateBackup(backupData) {
+        return backupData &&
+               backupData.version &&
+               backupData.timestamp &&
+               (backupData.records === null || Array.isArray(backupData.records)) &&
+               backupData.settings;
+    }
+
+    // بازیابی از localStorage
+    async recoverFromLocalStorage() {
+        try {
+            const records = this.loadFromStorage('attendanceRecords');
+            const settings = this.loadFromStorage('attendanceSettings');
+            
+            if (records && Array.isArray(records)) {
+                this.records = records;
+                this.settings = settings || this.getDefaultSettings();
+                return { success: true };
+            }
+            return { success: false };
+        } catch (error) {
+            return { success: false, error };
+        }
+    }
+
+    // بازیابی از IndexedDB
+    async recoverFromIndexedDB() {
+        return new Promise((resolve) => {
+            if (!this.db) {
+                resolve({ success: false });
+                return;
+            }
+
+            const transaction = this.db.transaction(['records', 'settings'], 'readonly');
+            const recordsStore = transaction.objectStore('records');
+            const settingsStore = transaction.objectStore('settings');
+            
+            const recordsRequest = recordsStore.getAll();
+            const settingsRequest = settingsStore.get('main');
+            
+            let records = [];
+            let settings = null;
+            let recordsLoaded = false;
+            let settingsLoaded = false;
+
+            recordsRequest.onsuccess = (e) => {
+                records = e.target.result || [];
+                recordsLoaded = true;
+                checkCompletion();
+            };
+
+            settingsRequest.onsuccess = (e) => {
+                settings = e.target.result ? e.target.result.data : null;
+                settingsLoaded = true;
+                checkCompletion();
+            };
+
+            recordsRequest.onerror = () => {
+                recordsLoaded = true;
+                checkCompletion();
+            };
+
+            settingsRequest.onerror = () => {
+                settingsLoaded = true;
+                checkCompletion();
+            };
+
+            function checkCompletion() {
+                if (recordsLoaded && settingsLoaded) {
+                    if (records.length > 0) {
+                        this.records = records;
+                        this.settings = settings || this.getDefaultSettings();
+                        resolve({ success: true });
+                    } else {
+                        resolve({ success: false });
+                    }
+                }
+            }
+
+            checkCompletion = checkCompletion.bind(this);
+        });
+    }
 
 // به‌روزرسانی وضعیت بازیابی
 updateRecoveryStatus(recovery) {
@@ -2937,6 +4696,8 @@ getRecoverySourceText(source) {
     };
     return sources[source] || source;
 }
+
+
 
 
             
@@ -3058,6 +4819,101 @@ showConfirmClearAllModal() {
     }
 }
 
+
+
+// مدیریت نمایش/پنهان گزارش‌ها - نسخه ایمن
+setupReportsToggle() {
+    try {
+        const toggleBtn = document.getElementById('reportsToggleBtn');
+        const tabContainer = document.querySelector('.tab-container');
+        
+        if (!toggleBtn || !tabContainer) {
+            console.warn('المان‌های نمایش گزارش‌ها پیدا نشدند');
+            return;
+        }
+        
+        // بارگذاری وضعیت از localStorage
+        const isCollapsed = this.loadFromStorage('reportsCollapsed') || false;
+        this.setReportsVisibility(!isCollapsed);
+        
+        // event listener برای دکمه
+        toggleBtn.addEventListener('click', () => {
+            this.toggleReportsVisibility();
+        });
+        
+        console.log('✅ دکمه نمایش گزارش‌ها راه‌اندازی شد');
+        
+    } catch (error) {
+        console.error('خطا در راه‌اندازی دکمه نمایش گزارش‌ها:', error);
+    }
+}
+
+
+// تغییر وضعیت نمایش گزارش‌ها - نسخه ایمن
+toggleReportsVisibility() {
+    try {
+        const tabContainer = document.querySelector('.tab-container');
+        if (!tabContainer) {
+            console.error('تب‌کنتینر پیدا نشد');
+            return;
+        }
+        
+        const isCurrentlyCollapsed = tabContainer.classList.contains('collapsed');
+        this.setReportsVisibility(isCurrentlyCollapsed);
+        
+    } catch (error) {
+        console.error('خطا در تغییر وضعیت نمایش گزارش‌ها:', error);
+    }
+}
+
+// تنظیم وضعیت نمایش - نسخه ایمن
+setReportsVisibility(show) {
+    try {
+        const toggleBtn = document.getElementById('reportsToggleBtn');
+        const toggleText = document.getElementById('reportsToggleText');
+        const toggleIcon = document.getElementById('reportsToggleIcon');
+        const tabContainer = document.querySelector('.tab-container');
+        const actionButtons = document.querySelector('.action-buttons');
+        
+        if (!toggleBtn || !toggleText || !toggleIcon || !tabContainer) {
+            console.error('المان‌های لازم برای نمایش گزارش‌ها پیدا نشدند');
+            return;
+        }
+        
+        if (show) {
+            // نمایش گزارش‌ها
+            tabContainer.classList.remove('collapsed');
+            toggleText.textContent = 'پنهان کردن گزارش‌ها';
+            toggleIcon.className = 'fas fa-chevron-up';
+            toggleBtn.classList.remove('collapsed');
+            
+            if (actionButtons) {
+                actionButtons.style.opacity = '1';
+                actionButtons.style.transform = 'scale(1)';
+            }
+            
+            // ذخیره وضعیت
+            this.saveToStorage('reportsCollapsed', false);
+        } else {
+            // پنهان کردن گزارش‌ها
+            tabContainer.classList.add('collapsed');
+            toggleText.textContent = 'نمایش گزارش‌ها';
+            toggleIcon.className = 'fas fa-chevron-down';
+            toggleBtn.classList.add('collapsed');
+            
+            if (actionButtons) {
+                actionButtons.style.opacity = '0.7';
+                actionButtons.style.transform = 'scale(0.98)';
+            }
+            
+            // ذخیره وضعیت
+            this.saveToStorage('reportsCollapsed', true);
+        }
+        
+    } catch (error) {
+        console.error('خطا در تنظیم وضعیت نمایش گزارش‌ها:', error);
+    }
+}
 // ایجاد مودال ویرایش
 createEditModal() {
     const modal = document.createElement('div');
@@ -3245,6 +5101,62 @@ isFontLoaded(fontFamily) {
     const testSize = context.measureText(text).width;
     
     return baseSize !== testSize;
+}
+
+// ایجاد ذرات شناور - نسخه نهایی
+createFloatingParticles() {
+    const particlesContainer = document.getElementById('floatingParticles');
+    if (!particlesContainer) return;
+    
+    particlesContainer.innerHTML = '';
+    
+    // ایجاد 12 ذره
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // اندازه و موقعیت تصادفی
+        const size = Math.random() * 60 + 20;
+        const top = Math.random() * 100;
+        const animationDuration = Math.random() * 10 + 5;
+        
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.top = `${top}%`;
+        particle.style.animationDuration = `${animationDuration}s`;
+        
+        // رنگ بر اساس تم
+        const theme = this.settings.theme === 'auto' ? this.getCurrentSeason() : this.settings.theme;
+        const colors = {
+            'spring': 'rgba(76, 175, 80, 0.15)',
+            'summer': 'rgba(255, 152, 0, 0.15)',
+            'autumn': 'rgba(255, 87, 34, 0.15)',
+            'winter': 'rgba(33, 150, 243, 0.15)',
+            'system': 'rgba(67, 97, 238, 0.1)', // رنگ اصلی سیستم
+            'default': 'rgba(67, 97, 238, 0.1)'
+        };
+        
+        particle.style.background = colors[theme] || colors.default;
+        
+        particlesContainer.appendChild(particle);
+    }
+}
+
+// فعال/غیرفعال کردن انیمیشن
+toggleBackgroundAnimation(enabled) {
+    const backgroundAnimation = document.getElementById('backgroundAnimation');
+    if (!backgroundAnimation) return;
+    
+    if (enabled) {
+        backgroundAnimation.classList.remove('disabled');
+        this.createFloatingParticles();
+    } else {
+        backgroundAnimation.classList.add('disabled');
+    }
+    
+    // ذخیره تنظیمات
+    this.settings.enableBackgroundAnimation = enabled;
+    this.saveToStorage('attendanceSettings', this.settings);
 }
 
 // بارگذاری گزارش سالانه با فرمت ساعت و دقیقه
@@ -3487,6 +5399,7 @@ updateStats() {
             }
             
             // ذخیره تنظیمات
+// ذخیره تنظیمات - نسخه اصلاح شده
 saveSettings() {
     try {
         const newSettings = {
@@ -3495,30 +5408,31 @@ saveSettings() {
             dailyHours: parseInt(document.getElementById('dailyHours').value) || 8,
             workDaysPerWeek: parseInt(document.getElementById('workDaysPerWeek').value) || 6,
             overtimeThreshold: parseInt(document.getElementById('overtimeThreshold').value) || 15,
-            fontFamily: document.getElementById('fontFamily').value || 'AsaGity',
-            currencyUnit: document.getElementById('currencyUnit').value || 'rial',
-            timeFormat: document.getElementById('timeFormat').value || '24h',
-            currencyUnit: document.getElementById('currencyUnit').value || 'rial',
-            timeFormat: document.getElementById('timeFormat').value || '24h',
-            autoWifiEnabled: document.getElementById('autoWifiCheck') ? document.getElementById('autoWifiCheck').checked : false,
+            fontFamily: document.getElementById('fontFamily')?.value || 'AsaGity',
+            currencyUnit: document.getElementById('currencyUnit')?.value || 'rial',
+            timeFormat: document.getElementById('timeFormat')?.value || '24h',
+            theme: document.getElementById('theme')?.value || 'system',
+            enableBackgroundAnimation: document.getElementById('enableBackgroundAnimation')?.checked !== false,
+            autoBackup: this.settings.autoBackup || this.getDefaultSettings().autoBackup,
+            autoWifiEnabled: document.getElementById('autoWifiCheck')?.checked || false,
             workWifis: document.getElementById('workWifis') ? 
                 document.getElementById('workWifis').value.split('\n')
                     .filter(wifi => wifi.trim())
                     .map(wifi => wifi.trim()) : 
                 ['AsaGity-Fiber', 'AsaGity-shatel', 'Local-WiFi'],
-            autoCheckInHours: document.getElementById('autoCheckInHours') ? 
-                document.getElementById('autoCheckInHours').value : '8:00-10:00',
-            autoCheckOutHours: document.getElementById('autoCheckOutHours') ? 
-                document.getElementById('autoCheckOutHours').value : '13:30-18:00',
+            autoCheckInHours: document.getElementById('autoCheckInHours')?.value || '8:00-10:00',
+            autoCheckOutHours: document.getElementById('autoCheckOutHours')?.value || '13:30-18:00',
             autoCleanup: this.settings.autoCleanup || this.getDefaultSettings().autoCleanup
         };
 
         this.settings = { ...this.settings, ...newSettings };
         this.saveToStorage('attendanceSettings', this.settings);
 
-                
-        // اعمال فونت جدید
+        // اعمال تغییرات
         this.applyFontFamily();
+        this.applyTheme();
+        this.toggleBackgroundAnimation(this.settings.enableBackgroundAnimation);
+        this.updateSeasonDisplay(); // به روزرسانی نمایش فصل
         
         // reset کردن flag تغییرات
         this.settingsChanged = false;
@@ -3568,26 +5482,475 @@ saveSettings() {
             }
             
             // صادرات به Excel
-            exportToExcel() {
-                // ایجاد داده برای اکسل
-                const data = [
-                    ['تاریخ', 'ساعت', 'نوع']
-                ];
-                
-                this.records.forEach(record => {
-                    data.push([
-                        record.date,
-                        record.time,
-                        record.type === 'in' ? 'ورود' : 'خروج'
-                    ]);
-                });
-                
-                const ws = XLSX.utils.aoa_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, 'حضور و غیاب');
-                
-                XLSX.writeFile(wb, `attendance-data-${this.getTodayDate()}.xlsx`);
+// خروجی اکسل حرفه‌ای و کامل
+exportToExcel() {
+    try {
+        console.log('📊 ایجاد گزارش اکسل حرفه‌ای...');
+        
+        // ایجاد workbook جدید
+        const wb = XLSX.utils.book_new();
+        
+        // ۱. گزارش ماهانه (صورت‌حساب)
+        this.createMonthlySalarySheet(wb);
+        
+        // ۲. گزارش روزانه
+        this.createDailyReportSheet(wb);
+        
+        // ۳. آرشیو کامل داده‌ها
+        this.createArchiveSheet(wb);
+        
+        // ۴. خلاصه مالی
+        this.createFinancialSummarySheet(wb);
+        
+        // ۵. تنظیمات سیستم
+        this.createSettingsSheet(wb);
+        
+        // دانلود فایل
+        const fileName = `حضور-و-غیاب-گزارش-کامل-${this.getTodayDate()}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        this.showNotification('✅ گزارش اکسل حرفه‌ای با موفقیت ایجاد شد', 'success');
+        
+    } catch (error) {
+        console.error('خطا در ایجاد گزارش اکسل:', error);
+        this.showNotification('❌ خطا در ایجاد گزارش اکسل', 'error');
+    }
+}
+
+// ایجاد sheet گزارش ماهانه و صورت‌حساب
+createMonthlySalarySheet(wb) {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    // داده‌های ماه جاری
+    const monthRecords = this.records.filter(record => {
+        const recordDate = new Date(record.date);
+        return recordDate.getFullYear() === currentYear && 
+               recordDate.getMonth() + 1 === currentMonth;
+    });
+    
+    const monthData = this.calculateMonthlyData(monthRecords);
+    const workDays = this.getWorkDaysInMonth(currentYear, currentMonth);
+    
+    // هدر گزارش
+    const reportHeader = [
+        ['گزارش حقوق و دستمزد ماهانه'],
+        ['شرکت: آساگیتی'],
+        [`ماه: ${this.getJalaliMonthName(currentMonth)} ${currentYear}`],
+        [`تاریخ تهیه گزارش: ${new Date().toLocaleDateString('fa-IR')}`],
+        [''] // خط خالی
+    ];
+    
+    // اطلاعات کارمند
+    const employeeInfo = [
+        ['اطلاعات کارمند'],
+        ['نام:', 'کاربر سیستم'],
+        ['شماره پرسنلی:', '---'],
+        ['مبلغ ساعتی:', `${this.formatCurrency(this.settings.hourlyRate)}`],
+        ['مبلغ اضافه‌کاری:', `${this.formatCurrency(this.settings.overtimeRate)}`],
+        ['ساعات کاری روزانه:', `${this.settings.dailyHours} ساعت`],
+        [''] // خط خالی
+    ];
+    
+    // خلاصه عملکرد
+    const performanceSummary = [
+        ['خلاصه عملکرد ماهانه'],
+        ['تعداد روزهای کاری:', `${workDays} روز`],
+        ['روزهای حضور:', `${monthData.workDays} روز`],
+        ['ساعات کار عادی:', `${this.formatHours(monthData.normalHours)}`],
+        ['ساعات اضافه‌کاری:', `${this.formatHours(monthData.overtimeHours)}`],
+        ['جمع کل ساعات:', `${this.formatHours(monthData.totalHours)}`],
+        [''] // خط خالی
+    ];
+    
+    // محاسبات مالی
+    const financialCalculations = [
+        ['محاسبات مالی'],
+        ['حقوق پایه:', `${this.formatCurrency(monthData.normalIncome)}`],
+        ['اضافه‌کاری:', `${this.formatCurrency(monthData.overtimeIncome)}`],
+        ['جمع کل:', `${this.formatCurrency(monthData.totalIncome)}`],
+        [''] // خط خالی
+    ];
+    
+    // جزئیات روزانه
+    const dailyDetailsHeader = [
+        ['تاریخ', 'روز', 'ساعت ورود', 'ساعت خروج', 'ساعات کار', 'اضافه‌کاری', 'حقوق روز', 'توضیحات']
+    ];
+    
+    const dailyDetails = this.getDailyDetails(monthRecords);
+    
+    // ترکیب تمام بخش‌ها
+    const reportData = [
+        ...reportHeader,
+        ...employeeInfo,
+        ...performanceSummary,
+        ...financialCalculations,
+        ...dailyDetailsHeader,
+        ...dailyDetails
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(reportData);
+    
+    // استایل‌بندی sheet
+    this.applySheetStyles(ws, reportData.length);
+    
+    // اضافه کردن به workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'صورت‌حساب ماهانه');
+}
+
+// ایجاد sheet گزارش روزانه
+createDailyReportSheet(wb) {
+    const dailyData = [
+        ['گزارش روزانه حضور و غیاب'],
+        [''],
+        ['تاریخ', 'روز هفته', 'اولین ورود', 'آخرین خروج', 'تعداد ثبت‌ها', 'ساعات کار', 'وضعیت']
+    ];
+    
+    // گروه‌بندی رکوردها بر اساس تاریخ
+    const dailyRecords = {};
+    this.records.forEach(record => {
+        if (!dailyRecords[record.date]) {
+            dailyRecords[record.date] = [];
+        }
+        dailyRecords[record.date].push(record);
+    });
+    
+    // ایجاد داده‌های روزانه
+    Object.keys(dailyRecords)
+        .sort()
+        .reverse()
+        .forEach(date => {
+            const records = dailyRecords[date];
+            const dayData = this.calculateDayData(records, date);
+            
+            dailyData.push([
+                toJalaliDate(date),
+                this.getDayName(date),
+                dayData.firstIn || '-',
+                dayData.lastOut || '-',
+                records.length,
+                dayData.totalHours.toFixed(2),
+                dayData.status
+            ]);
+        });
+    
+    const ws = XLSX.utils.aoa_to_sheet(dailyData);
+    XLSX.utils.book_append_sheet(wb, ws, 'گزارش روزانه');
+}
+
+// ایجاد sheet آرشیو کامل
+createArchiveSheet(wb) {
+    const archiveData = [
+        ['آرشیو کامل ثبت‌های حضور و غیاب'],
+        [''],
+        ['ردیف', 'تاریخ', 'زمان', 'نوع', 'دستگاه', 'IP', 'موقعیت']
+    ];
+    
+    this.records
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .forEach((record, index) => {
+            archiveData.push([
+                index + 1,
+                toJalaliDate(record.date),
+                record.time,
+                record.type === 'in' ? 'ورود' : 'خروج',
+                'موبایل/کامپیوتر',
+                '---',
+                '---'
+            ]);
+        });
+    
+    const ws = XLSX.utils.aoa_to_sheet(archiveData);
+    XLSX.utils.book_append_sheet(wb, ws, 'آرشیو کامل');
+}
+
+// ایجاد sheet خلاصه مالی
+createFinancialSummarySheet(wb) {
+    const summaryData = [
+        ['خلاصه مالی سالانه'],
+        [''],
+        ['ماه', 'روزهای کاری', 'ساعات عادی', 'ساعات اضافه‌کاری', 'حقوق پایه', 'اضافه‌کاری', 'جمع کل']
+    ];
+    
+    // محاسبه داده‌های ماهانه
+    const monthlyData = this.calculateYearlyMonthlyData();
+    
+    monthlyData.forEach(month => {
+        summaryData.push([
+            month.monthName,
+            month.workDays,
+            month.normalHours.toFixed(2),
+            month.overtimeHours.toFixed(2),
+            month.normalIncome.toLocaleString(),
+            month.overtimeIncome.toLocaleString(),
+            month.totalIncome.toLocaleString()
+        ]);
+    });
+    
+    // جمع کل سال
+    const yearlyTotal = monthlyData.reduce((total, month) => ({
+        normalHours: total.normalHours + month.normalHours,
+        overtimeHours: total.overtimeHours + month.overtimeHours,
+        normalIncome: total.normalIncome + month.normalIncome,
+        overtimeIncome: total.overtimeIncome + month.overtimeIncome,
+        totalIncome: total.totalIncome + month.totalIncome
+    }), { normalHours: 0, overtimeHours: 0, normalIncome: 0, overtimeIncome: 0, totalIncome: 0 });
+    
+    summaryData.push(['']);
+    summaryData.push([
+        'جمع کل سال',
+        monthlyData.reduce((sum, month) => sum + month.workDays, 0),
+        yearlyTotal.normalHours.toFixed(2),
+        yearlyTotal.overtimeHours.toFixed(2),
+        yearlyTotal.normalIncome.toLocaleString(),
+        yearlyTotal.overtimeIncome.toLocaleString(),
+        yearlyTotal.totalIncome.toLocaleString()
+    ]);
+    
+    const ws = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, ws, 'خلاصه مالی');
+}
+
+// ایجاد sheet تنظیمات
+createSettingsSheet(wb) {
+    const settingsData = [
+        ['تنظیمات سیستم'],
+        [''],
+        ['پارامتر', 'مقدار', 'توضیح']
+    ];
+    
+    const settings = [
+        ['مبلغ ساعتی', this.formatCurrency(this.settings.hourlyRate), 'مبلغ پایه هر ساعت کار'],
+        ['مبلغ اضافه‌کاری', this.formatCurrency(this.settings.overtimeRate), 'مبلغ هر ساعت اضافه‌کاری'],
+        ['ساعات کاری روزانه', `${this.settings.dailyHours} ساعت`, 'ساعات کاری معمول در روز'],
+        ['روزهای کاری هفته', `${this.settings.workDaysPerWeek} روز`, 'تعداد روزهای کاری در هفته'],
+        ['آستانه اضافه‌کاری', `${this.settings.overtimeThreshold} دقیقه`, 'حداقل دیرکرد برای اضافه‌کاری'],
+        ['واحد پول', this.settings.currencyUnit === 'rial' ? 'ریال' : 'تومان', 'واحد محاسبات مالی'],
+        ['فرمت زمان', this.settings.timeFormat === '24h' ? '24 ساعته' : '12 ساعته', 'فرمت نمایش زمان']
+    ];
+    
+    settingsData.push(...settings);
+    
+    const ws = XLSX.utils.aoa_to_sheet(settingsData);
+    XLSX.utils.book_append_sheet(wb, ws, 'تنظیمات');
+}
+
+// اعمال استایل‌های حرفه‌ای به sheet
+applySheetStyles(ws, dataLength) {
+    // تعریف استایل‌های مختلف
+    if (!ws['!cols']) ws['!cols'] = [];
+    
+    // تنظیم عرض ستون‌ها
+    ws['!cols'] = [
+        { wch: 15 }, // تاریخ
+        { wch: 10 }, // روز
+        { wch: 12 }, // ساعت ورود
+        { wch: 12 }, // ساعت خروج
+        { wch: 12 }, // ساعات کار
+        { wch: 12 }, // اضافه‌کاری
+        { wch: 15 }, // حقوق روز
+        { wch: 20 }  // توضیحات
+    ];
+    
+    // اضافه کردن border به کل جدول
+    if (!ws['!merges']) ws['!merges'] = [];
+    
+    // merge کردن هدرهای اصلی
+    ws['!merges'].push(
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // عنوان اصلی
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // شرکت
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }, // ماه
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } }  // تاریخ تهیه
+    );
+}
+
+// محاسبه داده‌های ماهانه برای صورت‌حساب
+calculateMonthlyData(monthRecords) {
+    const dailyData = this.calculateDailyData(monthRecords);
+    
+    // محاسبه روزهای کاری
+    const workDays = new Set(monthRecords.map(record => record.date)).size;
+    
+    return {
+        ...dailyData,
+        workDays: workDays
+    };
+}
+
+// دریافت جزئیات روزانه
+getDailyDetails(monthRecords) {
+    const dailyRecords = {};
+    
+    // گروه‌بندی بر اساس تاریخ
+    monthRecords.forEach(record => {
+        if (!dailyRecords[record.date]) {
+            dailyRecords[record.date] = [];
+        }
+        dailyRecords[record.date].push(record);
+    });
+    
+    const details = [];
+    
+    Object.keys(dailyRecords)
+        .sort()
+        .forEach(date => {
+            const records = dailyRecords[date];
+            const dayData = this.calculateDayData(records, date);
+            
+            details.push([
+                toJalaliDate(date),
+                this.getDayName(date),
+                dayData.firstIn || '-',
+                dayData.lastOut || '-',
+                dayData.totalHours.toFixed(2),
+                dayData.overtimeHours.toFixed(2),
+                this.formatCurrency(dayData.dailyIncome),
+                this.getDayComments(dayData)
+            ]);
+        });
+    
+    return details;
+}
+
+// محاسبه داده‌های روز
+calculateDayData(records, date) {
+    records.sort((a, b) => a.timestamp - b.timestamp);
+    
+    let firstIn = null;
+    let lastOut = null;
+    let totalHours = 0;
+    
+    // پیدا کردن اولین ورود و آخرین خروج
+    records.forEach(record => {
+        if (record.type === 'in' && !firstIn) {
+            firstIn = record.time;
+        }
+        if (record.type === 'out') {
+            lastOut = record.time;
+        }
+    });
+    
+    // محاسبه ساعات کار
+    let i = 0;
+    while (i < records.length - 1) {
+        if (records[i].type === 'in' && records[i + 1].type === 'out') {
+            const hours = this.calculateWorkHours(records[i].time, records[i + 1].time);
+            totalHours += hours;
+            i += 2;
+        } else {
+            i++;
+        }
+    }
+    
+    const normalHours = Math.min(totalHours, this.settings.dailyHours);
+    const overtimeHours = Math.max(totalHours - this.settings.dailyHours, 0);
+    const dailyIncome = (normalHours * this.settings.hourlyRate) + (overtimeHours * this.settings.overtimeRate);
+    
+    // تعیین وضعیت روز
+    let status = 'عادی';
+    if (totalHours === 0) status = 'غیبت';
+    else if (totalHours < this.settings.dailyHours * 0.5) status = 'تأخیر زیاد';
+    else if (totalHours < this.settings.dailyHours) status = 'تأخیر';
+    else if (overtimeHours > 0) status = 'اضافه‌کاری';
+    
+    return {
+        firstIn,
+        lastOut,
+        totalHours,
+        normalHours,
+        overtimeHours,
+        dailyIncome,
+        status
+    };
+}
+
+// دریافت نام روز هفته
+getDayName(dateString) {
+    const date = new Date(dateString);
+    const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
+    return days[date.getDay()];
+}
+
+// دریافت نام ماه شمسی
+getJalaliMonthName(month) {
+    const months = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+    ];
+    return months[month - 1] || month;
+}
+
+// محاسبه داده‌های ماهانه سال
+calculateYearlyMonthlyData() {
+    const monthlyData = {};
+    const currentYear = new Date().getFullYear();
+    
+    this.records.forEach(record => {
+        const recordDate = new Date(record.date);
+        const year = recordDate.getFullYear();
+        
+        if (year === currentYear) {
+            const month = recordDate.getMonth() + 1;
+            const key = `${year}-${month}`;
+            
+            if (!monthlyData[key]) {
+                monthlyData[key] = {
+                    month: month,
+                    monthName: this.getJalaliMonthName(month),
+                    records: [],
+                    workDays: 0
+                };
             }
+            monthlyData[key].records.push(record);
+        }
+    });
+    
+    // محاسبه آمار برای هر ماه
+    const result = [];
+    Object.keys(monthlyData).forEach(key => {
+        const data = monthlyData[key];
+        const dailyData = this.calculateDailyData(data.records);
+        
+        result.push({
+            month: data.month,
+            monthName: data.monthName,
+            workDays: new Set(data.records.map(r => r.date)).size,
+            normalHours: dailyData.totalNormalHours,
+            overtimeHours: dailyData.totalOvertimeHours,
+            normalIncome: dailyData.totalNormalIncome,
+            overtimeIncome: dailyData.totalOvertimeIncome,
+            totalIncome: dailyData.totalIncome
+        });
+    });
+    
+    return result.sort((a, b) => a.month - b.month);
+}
+
+// دریافت روزهای کاری ماه
+getWorkDaysInMonth(year, month) {
+    let count = 0;
+    const date = new Date(year, month - 1, 1);
+    
+    while (date.getMonth() === month - 1) {
+        // فقط روزهای غیرجمعه (در ایران جمعه تعطیل است)
+        if (date.getDay() !== 5) { // 5 = جمعه
+            count++;
+        }
+        date.setDate(date.getDate() + 1);
+    }
+    
+    return count;
+}
+
+// دریافت توضیحات روز
+getDayComments(dayData) {
+    if (dayData.totalHours === 0) return 'غیبت';
+    if (dayData.overtimeHours > 2) return 'اضافه‌کاری زیاد';
+    if (dayData.overtimeHours > 0) return 'اضافه‌کاری';
+    if (dayData.totalHours < this.settings.dailyHours * 0.7) return 'کمکاری';
+    return 'عادی';
+}
             
             // دانلود فایل
             downloadFile(blob, filename) {
@@ -3799,62 +6162,65 @@ createConfirmExitModal() {
 }
 
 
-
-
-            
 // باز کردن مودال تنظیمات - نسخه اصلاح شده
 openSettingsModal() {
-    // ابتدا فرم را پاکسازی کنیم
-    const settingsForm = document.getElementById('settingsForm');
-    settingsForm.innerHTML = `
-        <div class="form-group">
-            <label class="form-label" for="hourlyRate">مبلغ ساعتی (ریال)</label>
-            <input type="number" class="form-control" id="hourlyRate" required>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="overtimeRate">مبلغ اضافه‌کاری (ریال)</label>
-            <input type="number" class="form-control" id="overtimeRate" required>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="dailyHours">ساعات کاری روزانه</label>
-            <input type="number" class="form-control" id="dailyHours" value="8" required>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="workDaysPerWeek">تعداد روزهای کاری در هفته</label>
-            <input type="number" class="form-control" id="workDaysPerWeek" value="6" min="1" max="7" required>
-        </div>
-        <div class="form-group">
-            <label class="form-label" for="overtimeThreshold">آستانه اضافه‌کاری (دقیقه)</label>
-            <input type="number" class="form-control" id="overtimeThreshold" value="15" required>
-            <small>اگر کارمند بیش از این مقدار دیرتر از زمان پایان کار خارج شود، اضافه‌کاری محاسبه می‌شود.</small>
-        </div>
-    `;
+    try {
+        // ابتدا فرم را پاکسازی کنیم
+        const settingsForm = document.getElementById('settingsForm');
+        settingsForm.innerHTML = `
+            <div class="form-group">
+                <label class="form-label" for="hourlyRate">مبلغ ساعتی (ریال)</label>
+                <input type="number" class="form-control" id="hourlyRate" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="overtimeRate">مبلغ اضافه‌کاری (ریال)</label>
+                <input type="number" class="form-control" id="overtimeRate" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="dailyHours">ساعات کاری روزانه</label>
+                <input type="number" class="form-control" id="dailyHours" value="8" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="workDaysPerWeek">تعداد روزهای کاری در هفته</label>
+                <input type="number" class="form-control" id="workDaysPerWeek" value="6" min="1" max="7" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="overtimeThreshold">آستانه اضافه‌کاری (دقیقه)</label>
+                <input type="number" class="form-control" id="overtimeThreshold" value="15" required>
+                <small>اگر کارمند بیش از این مقدار دیرتر از زمان پایان کار خارج شود، اضافه‌کاری محاسبه می‌شود.</small>
+            </div>
+        `;
 
-    // پر کردن فرم با تنظیمات فعلی
-    document.getElementById('hourlyRate').value = this.settings.hourlyRate;
-    document.getElementById('overtimeRate').value = this.settings.overtimeRate;
-    document.getElementById('dailyHours').value = this.settings.dailyHours;
-    document.getElementById('workDaysPerWeek').value = this.settings.workDaysPerWeek;
-    document.getElementById('overtimeThreshold').value = this.settings.overtimeThreshold;
+        // پر کردن فرم با تنظیمات فعلی
+        document.getElementById('hourlyRate').value = this.settings.hourlyRate;
+        document.getElementById('overtimeRate').value = this.settings.overtimeRate;
+        document.getElementById('dailyHours').value = this.settings.dailyHours;
+        document.getElementById('workDaysPerWeek').value = this.settings.workDaysPerWeek;
+        document.getElementById('overtimeThreshold').value = this.settings.overtimeThreshold;
 
-    // اضافه کردن بخش تنظیمات نمایش
-    this.createDisplaySettingsSection();
-    
-    // اضافه کردن بخش سیستم هوشمند
-    this.createAutoSystemSection();
-    
-    // اضافه کردن بخش مدیریت داده‌ها
-    this.createStorageManagementSection();
-    // اضافه کردن دکمه ذخیره در انتهای فرم
-    const saveButton = document.createElement('button');
-    saveButton.type = 'submit';
-    saveButton.className = 'btn btn-primary';
-    saveButton.style.width = '100%';
-    saveButton.style.marginTop = '20px';
-    saveButton.innerHTML = '<i class="fas fa-save"></i> ذخیره تنظیمات';
-    settingsForm.appendChild(saveButton);
-    
-    document.getElementById('settingsModal').style.display = 'flex';
+        // اضافه کردن بخش‌ها به ترتیب صحیح
+        this.createDisplaySettingsSection();
+        this.createBackupSettingsSection();
+        this.createStorageManagementSection(); // این باید قبل از بخش پیشرفته باشد
+        this.createAdvancedBackupSection();
+        this.createAutoSystemSection();
+        
+        // اضافه کردن دکمه ذخیره در انتهای فرم
+        const saveButton = document.createElement('button');
+        saveButton.type = 'submit';
+        saveButton.className = 'btn btn-primary';
+        saveButton.style.width = '100%';
+        saveButton.style.marginTop = '20px';
+        saveButton.innerHTML = '<i class="fas fa-save"></i> ذخیره تنظیمات';
+        settingsForm.appendChild(saveButton);
+        
+        // نمایش مودال
+        document.getElementById('settingsModal').style.display = 'flex';
+        
+    } catch (error) {
+        console.error('خطا در باز کردن مودال تنظیمات:', error);
+        this.showNotification('❌ خطا در بارگذاری تنظیمات', 'error');
+    }
 }
 
 // ایجاد بخش سیستم هوشمند
@@ -3919,102 +6285,127 @@ formatHours(hours) {
     }
 }
 
-// ایجاد بخش تنظیمات پشتیبان‌گیری
+// ایجاد بخش تنظیمات پشتیبان‌گیری - نسخه ایمن
 createBackupSettingsSection() {
-    const backupSection = document.createElement('div');
-    backupSection.className = 'settings-section';
-    backupSection.innerHTML = `
-        <h3>تنظیمات پشتیبان‌گیری خودکار</h3>
-        
-        <div class="form-group">
-            <label class="form-label">
-                <input type="checkbox" id="autoBackupEnabled" checked>
-                فعال کردن پشتیبان‌گیری خودکار
-            </label>
-        </div>
-        
-        <div id="backupSettings" style="display: block;">
-            <div class="form-group">
-                <label class="form-label">
-                    <input type="checkbox" id="backupOnExit" checked>
-                    پشتیبان‌گیری هنگام خروج از برنامه
-                </label>
-            </div>
+    try {
+        const backupSection = document.createElement('div');
+        backupSection.className = 'settings-section';
+        backupSection.innerHTML = `
+            <h3>🔄 تنظیمات پشتیبان‌گیری هوشمند</h3>
             
             <div class="form-group">
                 <label class="form-label">
-                    <input type="checkbox" id="backupOnCheckOut" checked>
-                    پشتیبان‌گیری پس از ثبت خروج
+                    <input type="checkbox" id="autoBackupEnabled" checked>
+                    فعال کردن پشتیبان‌گیری خودکار
                 </label>
             </div>
             
-            <div class="form-group">
-                <label class="form-label" for="maxBackups">حداکثر تعداد پشتیبان‌ها</label>
-                <select class="form-control" id="maxBackups">
-                    <option value="5">۵ پشتیبان</option>
-                    <option value="10" selected>۱۰ پشتیبان</option>
-                    <option value="20">۲۰ پشتیبان</option>
-                    <option value="50">۵۰ پشتیبان</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="backupLocation">محل ذخیره‌سازی</label>
-                <select class="form-control" id="backupLocation">
-                    <option value="local">ذخیره در حافظه مرورگر</option>
-                    <option value="download">دانلود خودکار فایل</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">وضعیت پشتیبان‌ها</label>
-                <div style="padding: 10px; background: var(--background); border-radius: var(--radius);">
-                    <div>تعداد پشتیبان‌های ذخیره شده: <span id="backupCount">0</span></div>
-                    <div>آخرین پشتیبان: <span id="lastBackupTime">-</span></div>
-                    <div>حجم کل پشتیبان‌ها: <span id="totalBackupSize">0 KB</span></div>
+            <div id="backupSettings">
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="backupOnExit" checked>
+                        پشتیبان‌گیری هنگام خروج از برنامه
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="backupOnCheckOut" checked>
+                        پشتیبان‌گیری پس از ثبت خروج
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="maxBackups">حداکثر تعداد پشتیبان‌ها</label>
+                    <select class="form-control" id="maxBackups">
+                        <option value="5">۵ پشتیبان</option>
+                        <option value="10" selected>۱۰ پشتیبان</option>
+                        <option value="20">۲۰ پشتیبان</option>
+                        <option value="50">۵۰ پشتیبان</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="backupLocation">محل ذخیره‌سازی</label>
+                    <select class="form-control" id="backupLocation">
+                        <option value="local">ذخیره در حافظه مرورگر</option>
+                        <option value="download">دانلود خودکار فایل</option>
+                        <option value="auto">انتخاب خودکار بهترین روش</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">وضعیت پشتیبان‌ها</label>
+                    <div style="padding: 10px; background: var(--background); border-radius: var(--radius);">
+                        <div>تعداد پشتیبان‌های ذخیره شده: <span id="backupCount">0</span></div>
+                        <div>آخرین پشتیبان: <span id="lastBackupTime">---</span></div>
+                        <div>حجم کل پشتیبان‌ها: <span id="totalBackupSize">0 KB</span></div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-info" id="viewBackupsBtn">
+                        <i class="fas fa-history"></i> مشاهده تاریخچه پشتیبان‌ها
+                    </button>
+                    <button type="button" class="btn btn-warning" id="cleanupBackupsBtn">
+                        <i class="fas fa-broom"></i> پاکسازی پشتیبان‌های قدیمی
+                    </button>
+                    <button type="button" class="btn btn-success" id="createBackupBtn">
+                        <i class="fas fa-plus"></i> ایجاد پشتیبان جدید
+                    </button>
                 </div>
             </div>
-            
-            <div class="action-buttons">
-                <button type="button" class="btn btn-info" id="viewBackupsBtn">
-                    <i class="fas fa-history"></i> مشاهده تاریخچه پشتیبان‌ها
-                </button>
-                <button type="button" class="btn btn-warning" id="cleanupBackupsBtn">
-                    <i class="fas fa-broom"></i> پاکسازی پشتیبان‌های قدیمی
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('settingsForm').appendChild(backupSection);
-    
-    // تنظیم مقادیر فعلی
-    const backupSettings = this.settings.autoBackup || this.getDefaultSettings().autoBackup;
-    document.getElementById('autoBackupEnabled').checked = backupSettings.enabled;
-    document.getElementById('backupOnExit').checked = backupSettings.onExit;
-    document.getElementById('backupOnCheckOut').checked = backupSettings.onCheckOut;
-    document.getElementById('maxBackups').value = backupSettings.maxBackups;
-    document.getElementById('backupLocation').value = backupSettings.backupLocation;
-    
-    // به‌روزرسانی وضعیت
-    this.updateBackupStatus();
-    
-    // event listeners
-    document.getElementById('autoBackupEnabled').addEventListener('change', (e) => {
-        document.getElementById('backupSettings').style.display = e.target.checked ? 'block' : 'none';
-    });
-    
-    document.getElementById('viewBackupsBtn').addEventListener('click', () => {
-        this.showBackupHistory();
-    });
-    
-    document.getElementById('cleanupBackupsBtn').addEventListener('click', () => {
-        this.cleanupOldBackups();
-    });
+        `;
+        
+        document.getElementById('settingsForm').appendChild(backupSection);
+        
+        // تنظیم مقادیر فعلی با بررسی ایمن
+        const backupSettings = (this.settings.autoBackup || this.getDefaultSettings().autoBackup);
+        document.getElementById('autoBackupEnabled').checked = backupSettings.enabled !== false;
+        document.getElementById('backupOnExit').checked = backupSettings.onExit !== false;
+        document.getElementById('backupOnCheckOut').checked = backupSettings.onCheckOut !== false;
+        document.getElementById('maxBackups').value = backupSettings.maxBackups || 10;
+        document.getElementById('backupLocation').value = backupSettings.backupLocation || 'auto';
+        
+        // event listeners با بررسی ایمن
+        setTimeout(() => {
+            try {
+                document.getElementById('autoBackupEnabled').addEventListener('change', (e) => {
+                    document.getElementById('backupSettings').style.display = e.target.checked ? 'block' : 'none';
+                });
+                
+                document.getElementById('viewBackupsBtn').addEventListener('click', () => {
+                    this.showBackupHistory();
+                });
+                
+                document.getElementById('cleanupBackupsBtn').addEventListener('click', () => {
+                    this.cleanupOldBackups();
+                });
+                
+                document.getElementById('createBackupBtn').addEventListener('click', () => {
+                    this.createManualBackup();
+                });
+                
+                // نمایش/مخفی کردن بخش تنظیمات
+                document.getElementById('backupSettings').style.display = 
+                    backupSettings.enabled !== false ? 'block' : 'none';
+                
+                // به‌روزرسانی وضعیت با تاخیر
+                setTimeout(() => {
+                    this.updateBackupStatus();
+                }, 100);
+                
+            } catch (error) {
+                console.error('خطا در تنظیم event listeners پشتیبان:', error);
+            }
+        }, 0);
+        
+    } catch (error) {
+        console.error('خطا در ایجاد بخش تنظیمات پشتیبان:', error);
+    }
 }
 
 
-// در تابع createDisplaySettingsSection
 createDisplaySettingsSection() {
     const displaySection = document.createElement('div');
     displaySection.className = 'settings-section';
@@ -4031,9 +6422,6 @@ createDisplaySettingsSection() {
                 <option value="AsaGity5">فونت شبنم</option>
                 <option value="system">سیستم پیشفرض</option>
             </select>
-            <small id="fontFamilyHelp" class="form-text text-muted">
-                انتخاب فونت بر روی تمام متن‌های نرم‌افزار تأثیر می‌گذارد.
-            </small>
         </div>
         
         <div class="form-group">
@@ -4050,6 +6438,27 @@ createDisplaySettingsSection() {
                 <option value="24h">24 ساعته</option>
                 <option value="12h">12 ساعته (صبح/عصر)</option>
             </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="theme">تم برنامه</label>
+            <select class="form-control" id="theme">
+                <option value="system">سیستم (پیشفرض) 🎨</option>
+                <option value="auto">خودکار (بر اساس فصل)</option>
+                <option value="spring">بهاری 🌸</option>
+                <option value="summer">تابستانی ☀️</option>
+                <option value="autumn">پاییزی 🍁</option>
+                <option value="winter">زمستانی ❄️</option>
+            </select>
+            <small id="currentSeason">فصل فعلی: در حال تشخیص...</small>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" id="enableBackgroundAnimation" checked>
+                فعال کردن انیمیشن پس‌زمینه
+            </label>
+            <small>انیمیشن‌های زیبا در پس‌زمینه برنامه</small>
         </div>
         
         <div class="form-group">
@@ -4073,27 +6482,29 @@ createDisplaySettingsSection() {
     document.getElementById('settingsForm').appendChild(displaySection);
     
     // تنظیم مقادیر فعلی
-    document.getElementById('fontFamily').value = this.settings.fontFamily || 'AsaGity';
-    document.getElementById('currencyUnit').value = this.settings.currencyUnit || 'rial';
-    document.getElementById('timeFormat').value = this.settings.timeFormat || '24h';
-    
-    // به‌روزرسانی نمونه فونت هنگام تغییر
-    document.getElementById('fontFamily').addEventListener('change', () => {
-        this.updateFontPreview();
-        document.getElementById('currentCurrencyExample').textContent = this.formatCurrency(100000);
-        document.getElementById('currentTimeExample').textContent = this.formatTime('14:30:00');
-    });
-    
-    document.getElementById('currencyUnit').addEventListener('change', () => {
-        document.getElementById('currentCurrencyExample').textContent = this.formatCurrency(100000);
-    });
-    
-    document.getElementById('timeFormat').addEventListener('change', () => {
-        document.getElementById('currentTimeExample').textContent = this.formatTime('14:30:00');
-    });
-    
-    // به‌روزرسانی اولیه نمونه‌ها
-    this.updateFontPreview();
+    setTimeout(() => {
+        try {
+            const fontFamilyElement = document.getElementById('fontFamily');
+            const currencyUnitElement = document.getElementById('currencyUnit');
+            const timeFormatElement = document.getElementById('timeFormat');
+            const themeElement = document.getElementById('theme');
+            const enableBackgroundAnimationElement = document.getElementById('enableBackgroundAnimation');
+            
+            if (fontFamilyElement) fontFamilyElement.value = this.settings.fontFamily || 'AsaGity';
+            if (currencyUnitElement) currencyUnitElement.value = this.settings.currencyUnit || 'rial';
+            if (timeFormatElement) timeFormatElement.value = this.settings.timeFormat || '24h';
+            if (themeElement) themeElement.value = this.settings.theme || 'system';
+            if (enableBackgroundAnimationElement) enableBackgroundAnimationElement.checked = 
+                this.settings.enableBackgroundAnimation !== false;
+            
+            // به‌روزرسانی نمونه فونت و فصل
+            this.updateFontPreview();
+            this.updateSeasonDisplay();
+            
+        } catch (error) {
+            console.error('خطا در تنظیم مقادیر نمایش:', error);
+        }
+    }, 0);
 }
 
 // تابع به‌روزرسانی پیش‌نمایش فونت
@@ -4109,7 +6520,7 @@ updateFontPreview() {
 }
 
 
-// تابع اعمال فونت بر روی کل نرم‌افزار
+
 // تابع بهبود یافته اعمال فونت
 applyFontFamily() {
     const fontFamily = this.settings.fontFamily || 'AsaGity';
@@ -4143,7 +6554,139 @@ applyFontToElements(fontFamily) {
     });
 }
 
-// ایجاد بخش مدیریت داده‌ها - نسخه ساده‌شده
+// تشخیص فصل فعلی
+getCurrentSeason() {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    if (month >= 9 && month <= 11) return 'autumn';
+    return 'winter';
+}
+
+// به‌روزرسانی نمایش فصل - نسخه نهایی
+updateSeasonDisplay() {
+    const seasonElement = document.getElementById('currentSeason');
+    if (seasonElement) {
+        const season = this.getCurrentSeason();
+        const seasonNames = {
+            'spring': 'بهار 🌸',
+            'summer': 'تابستان ☀️',
+            'autumn': 'پاییز 🍁',
+            'winter': 'زمستان ❄️'
+        };
+        
+        const currentTheme = this.settings.theme || 'system';
+        let displayText = '';
+        
+        if (currentTheme === 'system') {
+            displayText = 'تم فعلی: سیستم (پیشفرض) 🎨';
+        } else if (currentTheme === 'auto') {
+            displayText = `فصل فعلی: ${seasonNames[season]} - تم خودکار`;
+        } else {
+            displayText = `تم فعلی: ${seasonNames[currentTheme]}`;
+        }
+        
+        seasonElement.textContent = displayText;
+    }
+}
+
+// اعمال تم - نسخه اصلاح شده
+// اعمال تم - نسخه نهایی
+applyTheme() {
+    try {
+        // اگر المان theme وجود دارد، از آن استفاده کن، در غیر این صورت از تنظیمات
+        const themeElement = document.getElementById('theme');
+        const theme = themeElement ? themeElement.value : (this.settings.theme || 'system');
+        
+        let actualTheme;
+        if (theme === 'system') {
+            actualTheme = 'system';
+        } else if (theme === 'auto') {
+            actualTheme = this.getCurrentSeason();
+        } else {
+            actualTheme = theme;
+        }
+        
+        // حذف تم‌های قبلی
+        document.body.classList.remove('theme-spring', 'theme-summer', 'theme-autumn', 'theme-winter', 'theme-system');
+        
+        // اضافه کردن تم جدید (فقط اگر سیستم نیست)
+        if (actualTheme !== 'system') {
+            document.body.classList.add(`theme-${actualTheme}`);
+        }
+        
+        // تغییر رنگ PWA
+        this.updatePWAThemeColor(actualTheme);
+        
+        // به‌روزرسانی انیمیشن‌ها
+        if (this.settings.enableBackgroundAnimation) {
+            this.createFloatingParticles();
+        }
+        
+        console.log('✅ تم اعمال شد:', actualTheme);
+        
+    } catch (error) {
+        console.error('خطا در اعمال تم:', error);
+    }
+}
+
+// به‌روزرسانی رنگ PWA - نسخه نهایی
+updatePWAThemeColor(theme) {
+    try {
+        const colors = {
+            'spring': '#4CAF50',
+            'summer': '#FF9800',
+            'autumn': '#FF5722',
+            'winter': '#2196F3',
+            'system': '#4361ee', // رنگ اصلی سیستم
+            'default': '#4361ee'
+        };
+        
+        const color = colors[theme] || colors.default;
+        
+        // به‌روزرسانی متا تگ theme-color
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (!metaThemeColor) {
+            metaThemeColor = document.createElement('meta');
+            metaThemeColor.name = 'theme-color';
+            document.head.appendChild(metaThemeColor);
+        }
+        metaThemeColor.content = color;
+        
+        // به‌روزرسانی سایر متا تگ‌های رنگی
+        this.updateMetaThemeColors(color);
+        
+        console.log('✅ رنگ PWA به‌روزرسانی شد:', color, 'برای تم:', theme);
+        
+    } catch (error) {
+        console.error('خطا در به‌روزرسانی رنگ PWA:', error);
+    }
+}
+
+// به‌روزرسانی سایر متا تگ‌های رنگی
+updateMetaThemeColors(color) {
+    // به‌روزرسانی apple-mobile-web-app-status-bar-style
+    let appleStatusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (!appleStatusBar) {
+        appleStatusBar = document.createElement('meta');
+        appleStatusBar.name = 'apple-mobile-web-app-status-bar-style';
+        document.head.appendChild(appleStatusBar);
+    }
+    appleStatusBar.content = 'black-translucent';
+    
+    // به‌روزرسانی msapplication-TileColor
+    let msTileColor = document.querySelector('meta[name="msapplication-TileColor"]');
+    if (!msTileColor) {
+        msTileColor = document.createElement('meta');
+        msTileColor.name = 'msapplication-TileColor';
+        document.head.appendChild(msTileColor);
+    }
+    msTileColor.content = color;
+}
+
+// ایجاد بخش مدیریت داده‌ها - نسخه اصلاح شده
 createStorageManagementSection() {
     const storageSection = document.createElement('div');
     storageSection.className = 'settings-section';
@@ -4155,26 +6698,45 @@ createStorageManagementSection() {
             <div style="padding: 10px; background: var(--background); border-radius: var(--radius);">
                 <div>تعداد رکوردها: <span id="recordsCount">${this.records.length}</span></div>
                 <div>حجم تقریبی: <span id="storageSize">${(JSON.stringify(this.records).length / 1024).toFixed(2)} KB</span></div>
+                <div>تعداد پشتیبان‌ها: <span id="backupsCount">${this.backupHistory.length}</span></div>
             </div>
         </div>
         
         <div class="action-buttons">
             <button type="button" class="btn btn-success" id="backupBtn">
-                <i class="fas fa-download"></i> پشتیبان‌گیری
+                <i class="fas fa-download"></i> پشتیبان ساده
             </button>
+            <button type="button" class="btn btn-info" id="advancedBackupBtn">
+                <i class="fas fa-database"></i> پشتیبان پیشرفته
+            </button>
+        </div>
+        
+        <div class="form-group" style="margin-top: 15px;">
+            <label class="form-label">بازیابی داده‌ها</label>
+            <div class="restore-buttons" style="display: flex; flex-direction: column; gap: 8px;">
+                <button type="button" class="btn btn-outline-primary restore-btn" id="restoreSimpleBtn">
+                    <i class="fas fa-upload"></i> بازیابی پشتیبان ساده
+                </button>
+                <button type="button" class="btn btn-outline-secondary restore-btn" id="restoreAdvancedBtn">
+                    <i class="fas fa-history"></i> بازیابی پشتیبان پیشرفته
+                </button>
+            </div>
+            <small style="display: block; margin-top: 8px;">
+                • <strong>پشتیبان ساده:</strong> فقط داده‌های فعلی<br>
+                • <strong>پشتیبان پیشرفته:</strong> تمام تاریخچه پشتیبان‌ها
+            </small>
+            
+            <!-- فایل‌های ورودی پنهان -->
+            <input type="file" id="restoreSimpleFile" accept=".json" style="display: none;">
+            <input type="file" id="restoreAdvancedFile" accept=".json" style="display: none;">
+        </div>
+
+                <div class="action-buttons" style="margin-top: 20px;">
             <button type="button" class="btn btn-warning" id="autoCleanupSettingsBtn">
                 <i class="fas fa-cog"></i> پاکسازی خودکار
             </button>
             <button type="button" class="btn btn-danger" id="clearAllBtn">
                 <i class="fas fa-trash"></i> پاکسازی همه
-            </button>
-        </div>
-        
-        <div class="form-group" style="margin-top: 15px;">
-            <label class="form-label">بازیابی از پشتیبان</label>
-            <input type="file" class="form-control" id="restoreFile" accept=".json">
-            <button type="button" class="btn btn-info" id="restoreBtn" style="margin-top: 10px; width: 100%;">
-                <i class="fas fa-upload"></i> بازیابی داده‌ها
             </button>
         </div>
 
@@ -4186,27 +6748,74 @@ createStorageManagementSection() {
     `;
     
     document.getElementById('settingsForm').appendChild(storageSection);
+
     
     // اضافه کردن event listeners
     setTimeout(() => {
         this.attachStorageEventListeners();
     }, 100);
 }
+
+
 // متد جدید برای attaching event listeners
 attachStorageEventListeners() {
+    // پشتیبان‌گیری ساده
     const backupBtn = document.getElementById('backupBtn');
-    const autoCleanupSettingsBtn = document.getElementById('autoCleanupSettingsBtn');
-    const clearAllBtn = document.getElementById('clearAllBtn');
-    const restoreBtn = document.getElementById('restoreBtn');
-    
     if (backupBtn) {
-        // حذف event listenerهای قبلی و اضافه کردن جدید
         backupBtn.replaceWith(backupBtn.cloneNode(true));
         document.getElementById('backupBtn').addEventListener('click', () => {
-            this.backupAllData();
+            this.backupSimpleData();
         });
     }
     
+    // پشتیبان‌گیری پیشرفته
+    const advancedBackupBtn = document.getElementById('advancedBackupBtn');
+    if (advancedBackupBtn) {
+        advancedBackupBtn.replaceWith(advancedBackupBtn.cloneNode(true));
+        document.getElementById('advancedBackupBtn').addEventListener('click', () => {
+            this.backupAdvancedData();
+        });
+    }
+    
+    // بازیابی پشتیبان ساده
+    const restoreSimpleBtn = document.getElementById('restoreSimpleBtn');
+    if (restoreSimpleBtn) {
+        restoreSimpleBtn.replaceWith(restoreSimpleBtn.cloneNode(true));
+        document.getElementById('restoreSimpleBtn').addEventListener('click', () => {
+            document.getElementById('restoreSimpleFile').click();
+        });
+    }
+    
+    // بازیابی پشتیبان پیشرفته
+    const restoreAdvancedBtn = document.getElementById('restoreAdvancedBtn');
+    if (restoreAdvancedBtn) {
+        restoreAdvancedBtn.replaceWith(restoreAdvancedBtn.cloneNode(true));
+        document.getElementById('restoreAdvancedBtn').addEventListener('click', () => {
+            document.getElementById('restoreAdvancedFile').click();
+        });
+    }
+    
+    // مدیریت فایل‌های ورودی
+    const restoreSimpleFile = document.getElementById('restoreSimpleFile');
+    if (restoreSimpleFile) {
+        restoreSimpleFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.restoreFromSimpleBackup(e.target.files[0]);
+            }
+        });
+    }
+    
+    const restoreAdvancedFile = document.getElementById('restoreAdvancedFile');
+    if (restoreAdvancedFile) {
+        restoreAdvancedFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.restoreFromAdvancedBackup(e.target.files[0]);
+            }
+        });
+    }
+    
+    // بقیه event listeners...
+    const autoCleanupSettingsBtn = document.getElementById('autoCleanupSettingsBtn');
     if (autoCleanupSettingsBtn) {
         autoCleanupSettingsBtn.replaceWith(autoCleanupSettingsBtn.cloneNode(true));
         document.getElementById('autoCleanupSettingsBtn').addEventListener('click', () => {
@@ -4214,33 +6823,57 @@ attachStorageEventListeners() {
         });
     }
     
+    const clearAllBtn = document.getElementById('clearAllBtn');
     if (clearAllBtn) {
-        // حذف event listenerهای قبلی و اضافه کردن جدید
         clearAllBtn.replaceWith(clearAllBtn.cloneNode(true));
         document.getElementById('clearAllBtn').addEventListener('click', () => {
-            console.log('clearAllData:', typeof this.clearAllData);
             this.clearAllData();
         });
     }
     
-    if (restoreBtn) {
-        restoreBtn.replaceWith(restoreBtn.cloneNode(true));
-        document.getElementById('restoreBtn').addEventListener('click', () => {
-            const fileInput = document.getElementById('restoreFile');
-            if (fileInput.files.length > 0) {
-                this.restoreFromBackup(fileInput.files[0]);
-            } else {
-                this.showNotification('لطفاً یک فایل پشتیبان انتخاب کنید', 'error');
-            }
+    // event listener برای دکمه راهنما
+    const installGuideBtn = document.getElementById('installGuideBtn');
+    if (installGuideBtn) {
+        installGuideBtn.addEventListener('click', () => {
+            this.openInstallGuide();
         });
     }
-// event listener برای دکمه راهنما
-document.getElementById('installGuideBtn').addEventListener('click', () => {
-    this.openInstallGuide();
-});
-
-
 }
+
+// پشتیبان‌گیری ساده
+backupSimpleData() {
+    const backupData = {
+        records: this.records,
+        settings: this.settings,
+        backupDate: new Date().toISOString(),
+        version: 'simple'
+    };
+    
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    this.downloadFile(dataBlob, `attendance-simple-backup-${this.getTodayDate()}.json`);
+    this.showNotification('✅ پشتیبان ساده با موفقیت ایجاد شد', 'success');
+}
+
+// پشتیبان‌گیری پیشرفته
+backupAdvancedData() {
+    const backupData = {
+        backupHistory: this.backupHistory,
+        currentRecords: this.records,
+        currentSettings: this.settings,
+        exportDate: new Date().toISOString(),
+        totalBackups: this.backupHistory.length,
+        version: 'advanced'
+    };
+    
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    this.downloadFile(dataBlob, `attendance-advanced-backup-${this.getTodayDate()}.json`);
+    this.showNotification('✅ پشتیبان پیشرفته با موفقیت ایجاد شد', 'success');
+}
+
 
 // تابع باز کردن راهنما
 openInstallGuide() {
@@ -4421,38 +7054,47 @@ backupAllData() {
     this.showNotification('پشتیبان‌گیری با موفقیت انجام شد', 'success');
 }
 
-// بازیابی از پشتیبان
-restoreFromBackup(file) {
+// تابع هوشمند برای تشخیص نوع پشتیبان
+async restoreFromBackup(file) {
     const reader = new FileReader();
     
     reader.onload = (e) => {
         try {
             const backupData = JSON.parse(e.target.result);
             
-            // اعتبارسنجی داده‌های پشتیبان
-            if (!backupData.records || !backupData.settings) {
-                throw new Error('فایل پشتیبان معتبر نیست');
-            }
-            
-            if (confirm('آیا از بازیابی این پشتیبان اطمینان دارید؟ داده‌های فعلی overwrite خواهند شد.')) {
-                this.records = backupData.records;
-                this.settings = backupData.settings;
-                
-                this.saveToStorage('attendanceRecords', this.records);
-                this.saveToStorage('attendanceSettings', this.settings);
-                
-                this.showNotification('داده‌ها با موفقیت بازیابی شدند', 'success');
-                
-                // به روزرسانی همه بخش‌ها
-                this.init();
+            // تشخیص نوع پشتیبان
+            if (this.isAdvancedBackup(backupData)) {
+                this.restoreFromAdvancedBackup(file);
+            } else if (this.isSimpleBackup(backupData)) {
+                this.restoreFromSimpleBackup(file);
+            } else {
+                throw new Error('فرمت فایل پشتیبان شناسایی نشد');
             }
         } catch (error) {
-            this.showNotification('خطا در بازیابی پشتیبان: ' + error.message, 'error');
+            this.showNotification('خطا در تشخیص فرمت پشتیبان: ' + error.message, 'error');
         }
     };
     
     reader.readAsText(file);
 }
+
+// تشخیص پشتیبان پیشرفته
+isAdvancedBackup(backupData) {
+    return backupData && 
+           backupData.backupHistory && 
+           Array.isArray(backupData.backupHistory) &&
+           backupData.exportDate !== undefined;
+}
+
+// تشخیص پشتیبان ساده
+isSimpleBackup(backupData) {
+    return backupData && 
+           backupData.records && 
+           Array.isArray(backupData.records) &&
+           backupData.settings &&
+           !backupData.backupHistory; // مطمئن شویم که پیشرفته نیست
+}
+
 
 // پاک‌سازی همه داده‌ها - نسخه کاملاً اصلاح شده
 clearAllData() {
@@ -4818,16 +7460,29 @@ loadArchiveData() {
                 }
             }
             
-            // ذخیره در localStorage
-            saveToStorage(key, value) {
-                localStorage.setItem(key, JSON.stringify(value));
-            }
-            
-            // بارگذاری از localStorage
-            loadFromStorage(key) {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : null;
-            }
+// ذخیره در localStorage با مدیریت خطا
+saveToStorage(key, value) {
+    try {
+        // ایجاد یک کپی ساده از داده‌ها
+        const simpleValue = this.simplifyData(value);
+        localStorage.setItem(key, JSON.stringify(simpleValue));
+        return true;
+    } catch (error) {
+        console.error(`خطا در ذخیره ${key} در localStorage:`, error);
+        return false;
+    }
+}
+
+// بارگذاری از localStorage با مدیریت خطا
+loadFromStorage(key) {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : null;
+    } catch (error) {
+        console.error(`خطا در بارگذاری ${key} از localStorage:`, error);
+        return null;
+    }
+}
         }
 
         // راه اندازی برنامه وقتی DOM لود شد
