@@ -59,17 +59,34 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
+// هنگام نصب، فوراً SW فعال شود
+self.addEventListener('install', event => {
+  self.skipWaiting(); // نصب و فعال شدن سریع
+});
+
+// هنگام فعال شدن، کنترل تمام clients را بگیرد
 self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
+    (async () => {
+      // حذف کش‌های قدیمی
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) {
+            console.log('Deleting old cache:', name);
+            return caches.delete(name);
           }
         })
       );
-    })
+
+      // فعال‌سازی فوری
+      await self.clients.claim();
+
+      // اطلاع به تمام صفحات باز برای ری‌لود
+      const clientsList = await self.clients.matchAll({ type: 'window' });
+      clientsList.forEach(client => {
+        client.postMessage({ type: 'SW_UPDATED' });
+      });
+    })()
   );
 });
