@@ -5,8 +5,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="حضور و غیاب">
+<meta name="apple-mobile-web-app-title" content="حضور و غیاب آساگیتی">
+<!-- برای مرورگر سامسونگ -->
+<meta name="application-name" content="حضور و غیاب">
+<meta name="msapplication-TileColor" content="#4361ee">
+<meta name="msapplication-TileImage" content="Images/LogoHozor144.png">
+<meta name="msapplication-config" content="browserconfig.xml">
 <!-- آیکون‌های iOS -->
+ <!-- برای پشتیبانی از تم رنگی در اندروید -->
+<meta name="theme-color" content="#4361ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a202c" media="(prefers-color-scheme: dark)">
+
+<!-- برای پشتیبانی از address bar رنگی -->
+<meta name="msapplication-navbutton-color" content="#4361ee">
+<meta name="apple-mobile-web-app-status-bar-style" content="#4361ee">
 <link rel="apple-touch-icon" href="Images/LogoHozor256.png">
 <link rel="apple-touch-icon" sizes="152x152" href="Images/LogoHozor256.png">
 <link rel="apple-touch-icon" sizes="180x180" href="Images/LogoHozor256.png">
@@ -2107,6 +2119,60 @@ li {
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }
 
+/* انیمیشن برای نمایش راهنمای نصب */
+@keyframes slideUpInstall {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* استایل برای حالت PWA نصب شده */
+body.pwa-installed header {
+    padding-top: env(safe-area-inset-top);
+}
+
+body.pwa-installed {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* بهبود نمایش در حالت نصب شده */
+@media all and (display-mode: standalone) {
+    body {
+        background-color: var(--background);
+    }
+    
+    .main-card {
+        padding-top: 10px;
+    }
+}
+
+/* استایل برای دکمه نصب در سامسونگ */
+.pwainstall {
+    background: white;
+    color: var(--primary);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.pwainstall:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
     </style>
 </head>
 <body>
@@ -2432,6 +2498,8 @@ this.settings.overtimeDays = this.settings.overtimeDays || []; // برای رو�
 this.lastUpdateCheck = null;
 this.settings.overtimeDaysSettings = this.settings.overtimeDaysSettings || {}; // برای روزهای خارج از ساعت پیشرفته
 this.settings.showReportsDisplay = this.settings.showReportsDisplay !== false;
+this.notificationPermission = false;
+
 
 
     // سیستم ذخیره‌سازی چندلایه
@@ -2464,6 +2532,547 @@ async initFileSystem() {
         console.error('خطا در راه‌اندازی سیستم فایل:', error);
         this.fileSystemAccess = 'localStorage';
     }
+}
+
+// راه‌اندازی سیستم نوتیفیکیشن - نسخه ایمن‌تر
+async setupNotificationSystem() {
+    try {
+        // بررسی پشتیبانی مرورگر
+        if (!('Notification' in window)) {
+            console.warn('🚫 مرورگر از Notification پشتیبانی نمی‌کند');
+            return;
+        }
+
+        // درخواست مجوز نوتیفیکیشن
+        this.notificationPermission = await this.requestNotificationPermission();
+        
+        if (this.notificationPermission) {
+            console.log('✅ سیستم نوتیفیکیشن راه‌اندازی شد');
+            
+            // فقط اگر Service Worker پشتیبانی می‌شود، Push Notifications را فعال کن
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    await this.subscribeToPushNotifications();
+                } catch (pushError) {
+                    console.log('🔕 استفاده از نوتیفیکیشن‌های ساده به جای Push');
+                    this.useSimpleNotifications();
+                }
+            } else {
+                console.log('🔕 استفاده از نوتیفیکیشن‌های ساده');
+                this.useSimpleNotifications();
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ خطا در راه‌اندازی سیستم نوتیفیکیشن:', error);
+        
+        // Fallback به نوتیفیکیشن ساده
+        this.useSimpleNotifications();
+    }
+}
+
+// سیستم نصب پیشرفته برای همه دستگاه‌ها
+setupAdvancedPWAInstall() {
+    // تشخیص نوع دستگاه و مرورگر
+    this.detectDeviceAndBrowser();
+    
+    // راه‌اندازی سیستم نصب
+    this.setupUniversalInstall();
+    
+    // بررسی وضعیت نصب
+    this.checkInstallStatus();
+}
+
+// تشخیص دستگاه و مرورگر
+detectDeviceAndBrowser() {
+    const ua = navigator.userAgent;
+    
+    this.deviceInfo = {
+        isSamsung: /samsung/i.test(ua),
+        isAndroid: /android/i.test(ua),
+        isIOS: /iphone|ipad|ipod/i.test(ua),
+        isChrome: /chrome/i.test(ua),
+        isSamsungBrowser: /samsungbrowser/i.test(ua),
+        isFirefox: /firefox/i.test(ua),
+        isEdge: /edg/i.test(ua)
+    };
+    
+    console.log('📱 اطلاعات دستگاه:', this.deviceInfo);
+}
+
+// سیستم نصب جهانی
+setupUniversalInstall() {
+    // رویداد beforeinstallprompt برای مرورگرهای مدرن
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        
+        console.log('✅ beforeinstallprompt فعال شد');
+        
+        // نمایش دکمه نصب پس از 3 ثانیه
+        setTimeout(() => {
+            this.showUniversalInstallPrompt();
+        }, 3000);
+    });
+
+    // رویداد appinstalled برای تشخیص نصب موفق
+    window.addEventListener('appinstalled', () => {
+        console.log('🎉 برنامه با موفقیت نصب شد!');
+        window.deferredPrompt = null;
+        this.showNotification('✅ برنامه با موفقیت نصب شد!', 'success');
+    });
+
+    // برای دستگاه‌های سامسونگ و اندروید
+    this.setupAndroidInstall();
+    
+    // برای iOS
+    this.setupIOSInstall();
+}
+
+// نصب برای اندروید و سامسونگ
+setupAndroidInstall() {
+    // بررسی پشتیبانی از Add to Home Screen
+    if (this.deviceInfo.isAndroid || this.deviceInfo.isSamsung) {
+        console.log('📱 راه‌اندازی سیستم نصب برای اندروید/سامسونگ');
+        
+        // نمایش راهنمای نصب برای سامسونگ
+        this.showSamsungInstallGuide();
+    }
+}
+
+// نصب برای iOS
+setupIOSInstall() {
+    if (this.deviceInfo.isIOS) {
+        console.log('📱 راه‌اندازی سیستم نصب برای iOS');
+        
+        // بررسی آیا در حالت PWA اجرا شده
+        const isInStandaloneMode = () => 
+            (window.matchMedia('(display-mode: standalone)').matches) ||
+            (window.navigator.standalone) ||
+            document.referrer.includes('ios-app');
+
+        if (!isInStandaloneMode()) {
+            this.showIOSInstallGuide();
+        }
+    }
+}
+
+// نمایش راهنمای نصب برای سامسونگ
+showSamsungInstallGuide() {
+    const dontShowAgain = this.loadFromStorage('dontShowSamsungGuide');
+    if (dontShowAgain) return;
+
+    setTimeout(() => {
+        this.createSamsungInstallModal();
+    }, 5000);
+}
+// ایجاد مودال نصب سامسونگ
+createSamsungInstallModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'samsungInstallModal';
+    modal.style.zIndex = '10020';
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; z-index: 10021;">
+            <div class="modal-header">
+                <h2 class="modal-title">📱 نصب برنامه روی سامسونگ</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 64px; margin-bottom: 10px;">📲</div>
+                    <h3 style="color: var(--primary);">روش نصب در گوشی سامسونگ</h3>
+                </div>
+                
+                <div class="install-step">
+                    <h4>روش ۱: از منوی مرورگر</h4>
+                    <div class="step-content">
+                        <div class="step">۱</div>
+                        <div>منوی مرورگر (<strong>سه نقطه</strong>) را باز کنید</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step">۲</div>
+                        <div>گزینه "<strong>Add page to</strong>" را انتخاب کنید</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step">۳</div>
+                        <div>"<strong>Home screen</strong>" را انتخاب کنید</div>
+                    </div>
+                </div>
+                
+                <div class="install-step" style="margin-top: 20px;">
+                    <h4>روش ۲: از طریق تنظیمات</h4>
+                    <div class="step-content">
+                        <div class="step">۱</div>
+                        <div>به <strong>Settings → Apps</strong> بروید</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step">۲</div>
+                        <div>"<strong>Special access</strong>" را انتخاب کنید</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step">۳</div>
+                        <div>"<strong>Install unknown apps</strong>" را فعال کنید</div>
+                    </div>
+                </div>
+
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <h4 style="color: #1976d2; margin-top: 0;">💡 نکات مهم برای سامسونگ:</h4>
+                    <ul style="color: #1976d2; padding-right: 20px;">
+                        <li>از <strong>Samsung Internet</strong> استفاده کنید</li>
+                        <li>مطمئن شوید <strong>Pop-ups</strong> فعال باشد</li>
+                        <li>اگر مشکل داشتید، از <strong>Chrome</strong> استفاده کنید</li>
+                    </ul>
+                </div>
+                
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <button class="btn btn-primary" id="samsungInstallNow">
+                        <i class="fas fa-download"></i> تلاش برای نصب خودکار
+                    </button>
+                    <button class="btn btn-secondary" id="samsungInstallLater">
+                        بعداً یادآوری کن
+                    </button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="dontShowSamsungAgain">
+                        این راهنما را دوباره نشان نده
+                    </label>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    // Event Listeners
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    document.getElementById('samsungInstallNow').addEventListener('click', () => {
+        this.triggerSamsungInstall();
+        modal.style.display = 'none';
+    });
+    
+    document.getElementById('samsungInstallLater').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    document.getElementById('dontShowSamsungAgain').addEventListener('change', (e) => {
+        this.saveToStorage('dontShowSamsungGuide', e.target.checked);
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+// تلاش برای نصب در سامسونگ
+triggerSamsungInstall() {
+    if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('✅ کاربر نصب را پذیرفت');
+            } else {
+                console.log('❌ کاربر نصب را رد کرد');
+                this.showManualInstallGuide();
+            }
+            window.deferredPrompt = null;
+        });
+    } else {
+        this.showManualInstallGuide();
+    }
+}
+
+// نمایش راهنمای نصب دستی برای همه دستگاه‌ها
+showUniversalInstallPrompt() {
+    const dontShowAgain = this.loadFromStorage('dontShowInstallPromotion');
+    if (dontShowAgain) return;
+
+    const installPromotion = document.createElement('div');
+    installPromotion.id = 'universalInstallPromotion';
+    installPromotion.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 20px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        z-index: 10010;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideUpInstall 0.5s ease-out;
+    `;
+    
+    installPromotion.innerHTML = `
+        <div style="flex: 1;">
+            <strong>📱 نصب برنامه</strong>
+            <div style="font-size: 14px; margin-top: 5px;">برای تجربه بهتر، برنامه را نصب کنید</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="universalInstallButton" class="pwainstall">
+                نصب برنامه
+            </button>
+            <button id="universalInstallClose" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 5px;">
+                ✕
+            </button>
+        </div>
+        <div style="        position: absolute;
+        left: 15%;
+        text-align: center;
+        font-size: 11px;
+        width:12%;">
+            <label style="display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: rgba(255,255,255,0.8);">
+                <input type="checkbox" id="universalDontShowAgain">
+                این پیام را دیگر نشان نده
+            </label>
+        </div>
+    `;
+    
+    document.body.appendChild(installPromotion);
+    
+    // Event Listeners
+    document.getElementById('universalInstallButton').addEventListener('click', () => {
+        this.triggerUniversalInstall();
+    });
+    
+    document.getElementById('universalInstallClose').addEventListener('click', () => {
+        const dontShow = document.getElementById('universalDontShowAgain').checked;
+        if (dontShow) {
+            this.saveToStorage('dontShowInstallPromotion', true);
+        }
+        installPromotion.remove();
+    });
+    
+    // بستن خودکار پس از 10 ثانیه
+    setTimeout(() => {
+        if (document.getElementById('universalInstallPromotion')) {
+            installPromotion.remove();
+        }
+    }, 10000);
+}
+
+// نصب جهانی برای همه دستگاه‌ها
+triggerUniversalInstall() {
+    if (window.deferredPrompt) {
+        // روش استاندارد
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            window.deferredPrompt = null;
+        });
+    } else if (this.deviceInfo.isIOS) {
+        this.showIOSInstallGuide();
+    } else if (this.deviceInfo.isSamsung || this.deviceInfo.isAndroid) {
+        this.showSamsungInstallGuide();
+    } else {
+        this.showManualInstallGuide();
+    }
+}
+
+// بررسی وضعیت نصب
+checkInstallStatus() {
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone;
+    
+    if (isInstalled) {
+        document.body.classList.add('pwa-installed');
+        console.log('✅ برنامه در حالت نصب شده اجرا شده');
+    } else {
+        console.log('📱 برنامه در مرورگر اجرا شده');
+    }
+    
+    return isInstalled;
+}
+
+// درخواست مجوز نوتیفیکیشن
+async requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+            console.log('✅ مجوز نوتیفیکیشن داده شد');
+            return true;
+        } else if (permission === 'denied') {
+            console.warn('❌ مجوز نوتیفیکیشن رد شد');
+            this.showNotification('برای دریافت اعلان‌های وضعیت، لطفاً مجوز نوتیفیکیشن را فعال کنید', 'warning');
+        } else {
+            console.log('مجوز نوتیفیکیشن مسدود شده');
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('خطا در درخواست مجوز نوتیفیکیشن:', error);
+        return false;
+    }
+}
+
+// تابع عضویت در Push Notifications - نسخه نهایی
+async subscribeToPushNotifications() {
+    try {
+        // بررسی پشتیبانی
+        if (!('PushManager' in window)) {
+            console.log('🚫 مرورگر از Push Notifications پشتیبانی نمی‌کند');
+            return null;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        
+        // بررسی عضویت قبلی
+        let subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+            console.log('✅ قبلاً در Push Notifications عضو شده‌اید');
+            return subscription;
+        }
+
+        // استفاده از کلید واقعی
+        const vapidPublicKey = this.getVapidPublicKey();
+        const convertedVapidKey = this.urlBase64ToUint8Array(vapidPublicKey);
+
+        const subscribeOptions = {
+            userVisibleOnly: true,
+            applicationServerKey: convertedVapidKey
+        };
+
+        console.log('🔑 در حال عضویت با کلید VAPID');
+        
+        subscription = await registration.pushManager.subscribe(subscribeOptions);
+        
+        console.log('✅ عضویت در Push Notifications انجام شد');
+        this.saveSubscription(subscription);
+        
+        return subscription;
+        
+    } catch (error) {
+        console.error('❌ خطا در عضویت Push Notifications:', error);
+        
+        if (error.name === 'InvalidAccessError') {
+            console.log('🔕 استفاده از نوتیفیکیشن‌های ساده');
+            this.useSimpleNotifications();
+        }
+        
+        return null;
+    }
+}
+
+useSimpleNotifications() {
+    console.log('🔔 فعال کردن نوتیفیکیشن‌های ساده');
+    this.simpleNotifications = true;
+}
+
+// ذخیره اطلاعات عضویت
+saveSubscription(subscription) {
+    localStorage.setItem('pushSubscription', JSON.stringify(subscription));
+}
+
+// تبدیل کلید عمومی
+urlBase64ToUint8Array(base64String) {
+    try {
+        // حذف هر گونه فضای خالی
+        const base64 = base64String.trim();
+        
+        // اضافه کردن padding اگر لازم است
+        const padding = '='.repeat((4 - base64.length % 4) % 4);
+        const base64WithPadding = base64 + padding;
+        
+        // جایگزینی کاراکترهای URL-safe
+        const base64Normalized = base64WithPadding
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = atob(base64Normalized);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        
+        console.log('🔑 کلید تبدیل شده:', outputArray);
+        return outputArray;
+    } catch (error) {
+        console.error('❌ خطا در تبدیل کلید:', error);
+        throw new Error('کلید VAPID نامعتبر است');
+    }
+}
+
+// ارسال نوتیفیکیشن وضعیت حضور
+async sendAttendanceNotification(status) {
+    if (!this.notificationPermission) return;
+
+    try {
+        let title, body;
+        
+        if (status === 'in') {
+            title = '✅ ورود ثبت شد';
+            body = 'شما وارد محیط کار شده‌اید';
+        } else {
+            title = '🚪 خروج ثبت شد';
+            body = 'شما از محیط کار خارج شده‌اید';
+        }
+
+        // اگر از نوتیفیکیشن‌های ساده استفاده می‌کنیم
+        if (this.simpleNotifications || !('PushManager' in window)) {
+            this.showSimpleNotification(title, body);
+            return;
+        }
+
+        // در غیر این صورت از Push Notifications استفاده کن
+        const registration = await navigator.serviceWorker.ready;
+        
+        await registration.showNotification(title, {
+            body: body,
+            icon: './Images/LogoHozor192.png',
+            badge: './Images/LogoHozor192.png',
+            vibrate: [100, 50, 100],
+            tag: 'attendance-status',
+            renotify: true,
+            data: {
+                url: window.location.href,
+                timestamp: Date.now()
+            },
+            actions: [
+                {
+                    action: 'open',
+                    title: 'باز کردن برنامه'
+                }
+            ]
+        });
+
+        console.log(`✅ نوتیفیکیشن ${status} ارسال شد`);
+
+    } catch (error) {
+        console.error('خطا در ارسال نوتیفیکیشن:', error);
+        // Fallback به نوتیفیکیشن ساده
+        this.showSimpleNotification(
+            status === 'in' ? '✅ ورود ثبت شد' : '🚪 خروج ثبت شد',
+            status === 'in' ? 'شما وارد محیط کار شده‌اید' : 'شما از محیط کار خارج شده‌اید'
+        );
+    }
+}
+
+
+showSimpleNotification(title, body) {
+    // استفاده از Notification API ساده
+    if (!('Notification' in window)) return;
+    
+    const options = {
+        body: body,
+        icon: './Images/LogoHozor192.png',
+        badge: './Images/LogoHozor192.png',
+        tag: 'attendance-simple'
+    };
+    
+    new Notification(title, options);
 }
 
 
@@ -3303,18 +3912,15 @@ addToBackupHistory(backupData) {
     this.saveToStorage('backupHistory', this.backupHistory);
 }
 
-// پشتیبان‌گیری پس از ثبت خروج
-// این تابع رو کاملاً جایگزین کن
+
+// در تابع checkInOut اصلی، این تغییرات را اعمال کنید:
 checkInOut() {
     try {
         console.log('🎯 شروع ثبت ورود/خروج...');
-        console.log('وضعیت فعلی:', this.currentStatus);
         
         const now = new Date();
         const timeString = now.toTimeString().split(' ')[0];
         const dateString = this.getTodayDate();
-        
-        console.log('زمان:', timeString, 'تاریخ:', dateString);
         
         if (this.currentStatus === 'out') {
             // ثبت ورود
@@ -3334,6 +3940,10 @@ checkInOut() {
             this.updateCheckButton('خروج', 'in');
             this.showNotification('ورود شما با موفقیت ثبت شد', 'success');
             
+            // 🔥 ارسال نوتیفیکیشن برای وضعیت ورود
+            this.sendAttendanceNotification('in');
+            this.updateAppBadge('in');
+            
         } else {
             // ثبت خروج
             const newRecord = {
@@ -3351,6 +3961,10 @@ checkInOut() {
             console.log('✅ خروج ثبت شد:', newRecord);
             this.updateCheckButton('ورود', 'out');
             this.showNotification('خروج شما با موفقیت ثبت شد', 'success');
+            
+            // 🔥 ارسال نوتیفیکیشن برای وضعیت خروج
+            this.sendAttendanceNotification('out');
+            this.updateAppBadge('out');
         }
 
         // ذخیره فوری
@@ -4700,11 +5314,24 @@ debugThemeSystem() {
 
 // 🔥 به‌روزرسانی نمایش تم در تنظیمات
 updateThemeDisplayInSettings() {
-    const themeSelect = document.getElementById('theme');
-    if (themeSelect) {
-        themeSelect.value = this.settings.theme;
+    try {
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            themeSelect.value = this.settings.theme || 'system';
+        }
+        
+        // به‌روزرسانی نمایش با مدیریت خطا
+        setTimeout(() => {
+            try {
+                this.updateSeasonDisplay();
+            } catch (error) {
+                console.log('⚠️ تب نمایش فعال نیست - به‌روزرسانی نمایش تم لغو شد');
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ خطا در به‌روزرسانی نمایش تم در تنظیمات:', error);
     }
-    this.updateSeasonDisplay();
 }
 
 // 🔥 جایگزین تابع toggleTheme قدیمی
@@ -5458,9 +6085,10 @@ finalizeInitialization() {
         this.updateStats();
         
         // 🔥 راه‌اندازی سیستم‌های اختیاری
-        this.setupPWAInstallPrompt();
+        this.setupAdvancedPWAInstall();
         this.setupAutoBackupOnExit();
         this.setupAutoUpdate();
+        this.setupNotificationSystem();
         this.checkIfPWAInstalled();
         this.manageStorage();
         this.setupBackupRestoreListeners();
@@ -6298,6 +6926,13 @@ async saveToIndexedDB() {
 }
 
 
+getVapidPublicKey() {
+    // این کلید عمومی است و می‌تواند در کد سمت کلاینت باشد
+    return 'BO3fSiGfLwlDrq97_OEAKwFC1CtabNDP26YkdOEj-oyodVgix7dokcPuX0L3SGk_nPVAq2uRxu5kG7R17jf5S3s';
+}
+
+
+
 // ذخیره در sessionStorage
 saveToSessionStorage() {
     try {
@@ -7072,34 +7707,24 @@ updateToggleButtonState(isVisible = null) {
     }
 }
 
-// تابع اصلاح شده updateAppBadge
-updateAppBadge() {
-    console.log('🔄 به‌روزرسانی نماد برنامه، وضعیت:', this.currentStatus);
-    
-    // استفاده از Badging API برای مرورگرهای مدرن
-    if ('setAppBadge' in navigator) {
-        if (this.currentStatus === 'in') {
-            // استفاده از عدد 1 به جای رشته
-            navigator.setAppBadge(1).then(() => {
-                console.log('✅ نماد فعال شد');
-            }).catch(error => {
-                console.log('خطا در نمایش نماد:', error);
-                this.fallbackBadgeUpdate(true);
+// به‌روزرسانی Badge اپلیکیشن
+updateAppBadge(status) {
+    if (!('setAppBadge' in navigator)) return;
+
+    try {
+        if (status === 'in') {
+            // استفاده از علامت ! به جای عدد
+            navigator.setAppBadge('!').catch(() => {
+                // Fallback برای مرورگرهایی که از رشته پشتیبانی نمی‌کنند
+                navigator.setAppBadge(1);
             });
         } else {
-            navigator.clearAppBadge().then(() => {
-                console.log('✅ نماد پاک شد');
-            }).catch(error => {
-                console.log('خطا در پاک کردن نماد:', error);
-                this.fallbackBadgeUpdate(false);
-            });
+            navigator.clearAppBadge();
         }
-    } else {
-        console.log('📱 Badging API پشتیبانی نمی‌شود، استفاده از روش جایگزین');
-        this.fallbackBadgeUpdate(this.currentStatus === 'in');
+    } catch (error) {
+        console.log('خطا در به‌روزرسانی Badge:', error);
     }
 }
-
 
 // روش جایگزین بهبود یافته
 fallbackBadgeUpdate(showBadge) {
@@ -10142,6 +10767,31 @@ loadDisplaySettingsTab(form) {
                         فعال کردن انیمیشن پس‌زمینه
                     </label>
                 </div>
+
+                    <div class="form-group">
+        <label class="form-label">
+            <input type="checkbox" id="enableNotifications" checked>
+            فعال کردن نوتیفیکیشن وضعیت حضور
+        </label>
+        <small>دریافت اعلان هنگام ثبت ورود و خروج در اپلیکیشن‌های پیام‌رسان</small>
+    </div>
+    
+    <div class="form-group">
+        <label class="form-label">
+            <input type="checkbox" id="enableBadge" checked>
+            فعال کردن نشانگر وضعیت (Badge)
+        </label>
+        <small>نمایش علامت ! روی آیکون برنامه هنگام حضور در محیط کار</small>
+    </div>
+    
+    <div class="action-buttons">
+        <button type="button" class="btn btn-info" id="testNotificationBtn">
+            <i class="fas fa-bell"></i> تست نوتیفیکیشن
+        </button>
+        <button type="button" class="btn btn-warning" id="resetNotificationBtn">
+            <i class="fas fa-redo"></i> بازنشانی مجوزها
+        </button>
+    </div>
                 
                 <div class="form-group">
                     <label class="form-label">نمونه نمایش فعلی:</label>
@@ -10167,6 +10817,9 @@ loadDisplaySettingsTab(form) {
                 const showTimeDisplay = document.getElementById('showTimeDisplay');
                 const showDateDisplay = document.getElementById('showDateDisplay');
                 const showReportsDisplay = document.getElementById('showReportsDisplay');
+                    // event listeners برای نوتیفیکیشن
+                const testNotificationBtn = document.getElementById('testNotificationBtn');
+                const resetNotificationBtn = document.getElementById('resetNotificationBtn');
 
                 if (fontFamilySelect) fontFamilySelect.value = this.settings.fontFamily || 'AsaGity';
                 if (currencyUnitSelect) currencyUnitSelect.value = this.settings.currencyUnit || 'rial';
@@ -10176,6 +10829,17 @@ loadDisplaySettingsTab(form) {
                 if (showTimeDisplay) showTimeDisplay.checked = this.settings.showTimeDisplay !== false;
                 if (showDateDisplay) showDateDisplay.checked = this.settings.showDateDisplay !== false;
                 if (showReportsDisplay) showReportsDisplay.checked = this.settings.showReportsDisplay !== false;
+                    if (testNotificationBtn) {
+        testNotificationBtn.addEventListener('click', () => {
+            this.testNotification();
+        });
+    }
+    
+    if (resetNotificationBtn) {
+        resetNotificationBtn.addEventListener('click', () => {
+            this.resetNotificationPermissions();
+        });
+    }
 
                 console.log('✅ مقادیر تنظیمات نمایش پر شدند');
 
@@ -10216,6 +10880,39 @@ this.updateThemeDisplay();
                 </p>
             </div>
         `;
+    }
+}
+
+// تست نوتیفیکیشن
+async testNotification() {
+    try {
+        await this.sendAttendanceNotification('in');
+        this.showNotification('✅ نوتیفیکیشن تست ارسال شد', 'success');
+    } catch (error) {
+        this.showNotification('❌ خطا در ارسال نوتیفیکیشن تست', 'error');
+    }
+}
+
+// بازنشانی مجوزهای نوتیفیکیشن
+async resetNotificationPermissions() {
+    try {
+        // حذف subscription قدیمی
+        localStorage.removeItem('pushSubscription');
+        
+        // لغو عضویت قبلی
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+            await subscription.unsubscribe();
+        }
+        
+        // راه‌اندازی مجدد سیستم
+        this.setupNotificationSystem();
+        
+        this.showNotification('✅ مجوزهای نوتیفیکیشن بازنشانی شد', 'success');
+    } catch (error) {
+        console.error('خطا در بازنشانی مجوزها:', error);
+        this.showNotification('❌ خطا در بازنشانی مجوزها', 'error');
     }
 }
 
@@ -11208,14 +11905,17 @@ applyFontToElements(fontFamily) {
 updateSeasonDisplay() {
     try {
         const seasonElement = document.getElementById('currentSeason');
-        if (!seasonElement) {
-            console.warn('❌ المان نمایش تم پیدا نشد');
+        const themeDisplayElement = document.getElementById('currentThemeDisplay');
+        
+        // اگر المان‌ها وجود ندارند، خروج
+        if (!seasonElement && !themeDisplayElement) {
+            console.log('🔍 المان‌های نمایش تم پیدا نشدند - احتمالاً تب نمایش بسته است');
             return;
         }
 
         // دریافت تم فعلی با مقدار پیشفرض
         const currentTheme = this.settings.theme || 'system';
-        console.log('🎯 تم فعلی:', currentTheme);
+        console.log('🎯 تم فعلی برای نمایش:', currentTheme);
 
         let displayText = '';
         
@@ -11228,7 +11928,9 @@ updateSeasonDisplay() {
             'spring': 'بهاری 🌸',
             'summer': 'تابستانی ☀️',
             'autumn': 'پاییزی 🍁',
-            'winter': 'زمستانی ❄️'
+            'winter': 'زمستانی ❄️',
+            'neon': 'نئونی 💡',
+            'rainbow': 'رنگین‌کمانی 🌈'
         };
 
         if (currentTheme === 'system') {
@@ -11246,15 +11948,19 @@ updateSeasonDisplay() {
             displayText = `تم فعلی: ${themeNames[currentTheme] || currentTheme}`;
         }
 
-        seasonElement.textContent = displayText;
+        // به‌روزرسانی المان‌ها اگر وجود دارند
+        if (seasonElement) {
+            seasonElement.textContent = displayText;
+        }
+        
+        if (themeDisplayElement) {
+            themeDisplayElement.textContent = displayText;
+        }
+        
         console.log('✅ نمایش تم به‌روزرسانی شد:', displayText);
         
     } catch (error) {
         console.error('❌ خطا در به‌روزرسانی نمایش تم:', error);
-        const seasonElement = document.getElementById('currentSeason');
-        if (seasonElement) {
-            seasonElement.textContent = 'تم فعلی: سیستم (پیشفرض) 🎨';
-        }
     }
 }
 
