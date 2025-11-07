@@ -2905,7 +2905,6 @@ async requestNotificationPermission() {
             return true;
         } else if (permission === 'denied') {
             console.warn('❌ مجوز نوتیفیکیشن رد شد');
-            this.showNotification('برای دریافت اعلان‌های وضعیت، لطفاً مجوز نوتیفیکیشن را فعال کنید', 'warning');
         } else {
             console.log('مجوز نوتیفیکیشن مسدود شده');
         }
@@ -13484,4 +13483,5 @@ document.addEventListener('DOMContentLoaded', checkIconExists);
 </footer>
 </body>
 </html>
+
 
