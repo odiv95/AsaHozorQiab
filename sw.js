@@ -1,92 +1,56 @@
-// sw.js - نسخه اصلاح شده
-const CACHE_NAME = 'attendance-app-v1.2';
-const urlsToCache = [
-  '/',
-  './index.html',
-  './manifest.json'
+// نسخه برنامه
+const APP_VERSION = '1.7.3'; // ← هر بار تغییر دادید، فقط این عدد را عوض کنید
+
+// Cache Name بر اساس نسخه برنامه
+const CACHE_NAME = `attendance-app-cache-v${APP_VERSION}`;
+const ASSETS = [
+  '/',               // صفحه اصلی
+  '/index.html',
+  '/manifest.json',
+  'Images/LogoHozor192.png',
+  'Images/LogoHozor512.png',
 ];
 
-self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('Opened cache');
-        // استفاده از add به جای addAll برای مدیریت خطاها بهتر است
-        return Promise.all(
-          urlsToCache.map(function(url) {
-            return cache.add(url).catch(function(error) {
-              console.log('Failed to cache:', url, error);
-            });
-          })
-        );
-      })
-  );
-});
-
-self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // اگر فایل در cache پیدا شد برگردان
-        if (response) {
-          return response;
-        }
-        
-        // در غیر این صورت از شبکه fetch کن
-        return fetch(event.request).then(function(response) {
-          // بررسی کن که response معتبر است
-          if(!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // response را clone کن چون فقط یک بار می‌توان خواند
-          var responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
-        });
-      })
-      .catch(function() {
-        // اگر هر دو روش شکست خوردند، صفحه fallback نشان بده
-        return new Response('اپلیکیشن حضور و غیاب', {
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
-      })
-  );
-});
-
-// هنگام نصب، فوراً SW فعال شود
 self.addEventListener('install', event => {
-  self.skipWaiting(); // نصب و فعال شدن سریع
+    console.log('📦 Service Worker نصب شد');
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    );
+    self.skipWaiting();
 });
 
-// هنگام فعال شدن، کنترل تمام clients را بگیرد
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
-    (async () => {
-      // حذف کش‌های قدیمی
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map(name => {
-          if (name !== CACHE_NAME) {
-            console.log('Deleting old cache:', name);
-            return caches.delete(name);
-          }
-        })
-      );
+self.addEventListener('activate', event => {
+    console.log('🚀 Service Worker فعال شد');
+    // حذف کش‌های قدیمی
+    event.waitUntil(
+        caches.keys().then(keys => 
+            Promise.all(
+                keys.map(key => key !== CACHE_NAME && caches.delete(key))
+            )
+        )
+    );
+    self.clients.claim();
+});
 
-      // فعال‌سازی فوری
-      await self.clients.claim();
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') return;
 
-      // اطلاع به تمام صفحات باز برای ری‌لود
-      const clientsList = await self.clients.matchAll({ type: 'window' });
-      clientsList.forEach(client => {
-        client.postMessage({ type: 'SW_UPDATED' });
-      });
-    })()
-  );
+    event.respondWith(
+        caches.match(event.request).then(res => 
+            res || fetch(event.request).then(net => {
+                if (net && net.status === 200) {
+                    const copy = net.clone();
+                    caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+                }
+                return net;
+            }).catch(() => caches.match('/index.html'))
+        )
+    );
+});
+
+// پیام‌ها از main.js
+self.addEventListener('message', event => {
+    if (event.data?.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
