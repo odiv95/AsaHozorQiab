@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+    <msapplication>
+        <tile>
+            <square70x70logo src="Images/LogoHozor70.png"/>
+            <square150x150logo src="Images/LogoHozor150.png"/>
+            <square310x310logo src="Images/LogoHozor310.png"/>
+            <TileColor>#4361ee</TileColor>
+        </tile>
+    </msapplication>
+</browserconfig>
