@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="حضور و غیاب آساگیتی">
 <!-- برای مرورگر سامسونگ -->
-<meta name="application-name" content="حضور و غیاب آساگیتی">
+<meta name="application-name" content="حضور و غیاب">
 <meta name="msapplication-TileColor" content="#4361ee">
 <meta name="msapplication-TileImage" content="Images/LogoHozor144.png">
 <meta name="msapplication-config" content="browserconfig.xml">
@@ -885,7 +885,10 @@ body {
     display: flex !important;
 }
 
+.notification-warning{
 
+    background:rgb(100, 31, 31)
+}
 .modal-content {
     background-color: var(--card-bg);
     border-radius: var(--radius);
@@ -2173,6 +2176,159 @@ body.pwa-installed {
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
 }
 
+        .time-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .in-time {
+            background: #d4edda;
+            color: #155724;
+        }
+        .out-time {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .hours-badge {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .overtime-badge {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .income-badge {
+            background: #e2e3e5;
+            color: #383d41;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-badge.absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-badge.normal {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.overtime {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-badge.high-overtime {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+        .status-badge.low-attendance {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        .no-data {
+            color: var(--text-light);
+            font-style: italic;
+        }
+        .no-overtime {
+            color: var(--text-light);
+        }
+
+
+        /* استایل‌های سیستم ویرایش پیشرفته */
+
+.record-time {
+    font-family: 'Courier New', monospace;
+    text-align: center;
+}
+
+.record-type {
+    min-width: 100px;
+}
+
+#editDayRecordsBody tr:hover {
+    background-color: var(--background-light);
+}
+
+.delete-single-record {
+    transition: all 0.3s ease;
+}
+
+.delete-single-record:hover {
+    transform: scale(1.1);
+    background-color: var(--danger) !important;
+}
+
+/* استایل برای input type="time" در مرورگرهای مختلف */
+input[type="time"] {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    color: var(--text);
+    font-size: 14px;
+}
+
+input[type="time"]:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+/* استایل‌های پاکسازی پیشرفته */
+.cleanup-section {
+    transition: all 0.3s ease;
+}
+
+.cleanup-preview-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.cleanup-stat {
+    text-align: center;
+    padding: 10px;
+    background: var(--background-light);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.cleanup-stat .value {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.cleanup-stat .label {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* استایل برای بخش‌های مختلف پاکسازی */
+#dateRangeSection,
+#yearRangeSection,
+#monthRangeSection,
+#olderThanSection {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
     </style>
 </head>
 <body>
@@ -2381,6 +2537,11 @@ body.pwa-installed {
                     <!-- گزینه‌های سال اینجا لود می‌شوند -->
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label" for="archiveDay">روز</label>
+                <select class="form-control" id="archiveDay">
+                    </select>
+            </div> 
             <div class="table-container">
                 <table id="archiveTable">
                     <thead>
@@ -2412,8 +2573,9 @@ body.pwa-installed {
         <button class="close-notification">&times;</button>
     </div>
 
+
     <script>
-const APP_VERSION = '1.7.12'; // ← فقط این عدد رو موقع آپدیت تغییر بده
+const APP_VERSION = '1.7.13'; // ← فقط این عدد رو موقع آپدیت تغییر بده
 
 function toPersianDigits(num) {
     return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
@@ -2511,6 +2673,68 @@ this.notificationPermission = false;
     this.backupHistory = this.loadBackupHistory();
     
     this.init();
+}
+
+// تابع تبدیل تاریخ شمسی به میلادی - نسخه کامل
+jalaliToGregorian(jalaliDate) {
+    try {
+        const [jYear, jMonth, jDay] = jalaliDate.split('/').map(Number);
+        
+        // الگوریتم دقیق تبدیل شمسی به میلادی
+        const jalaliToGregorian = (jy, jm, jd) => {
+            jy += 1595;
+            let days = -355668 + (365 * jy) + (~~(jy / 33) * 8) + ~~(((jy % 33) + 3) / 4) + jd +
+                ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+            
+            let gy = 400 * ~~(days / 146097);
+            days %= 146097;
+            
+            if (days > 36524) {
+                gy += 100 * ~~(--days / 36524);
+                days %= 36524;
+                if (days >= 365) days++;
+            }
+            
+            gy += 4 * ~~(days / 1461);
+            days %= 1461;
+            
+            if (days > 365) {
+                gy += ~~((days - 1) / 365);
+                days = (days - 1) % 365;
+            }
+            
+            let gd = days + 1;
+            const sal_a = [0, 31, ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            let gm;
+            for (gm = 0; gm < 13; gm++) {
+                let v = sal_a[gm];
+                if (gd <= v) break;
+                gd -= v;
+            }
+            
+            return { gy: gy, gm: gm, gd: gd };
+        };
+        
+        const gregorian = jalaliToGregorian(jYear, jMonth, jDay);
+        const dateString = `${gregorian.gy}-${gregorian.gm.toString().padStart(2, '0')}-${gregorian.gd.toString().padStart(2, '0')}`;
+        
+        return dateString;
+        
+    } catch (error) {
+        console.error('خطا در تبدیل تاریخ شمسی به میلادی:', error);
+        throw new Error('تاریخ شمسی نامعتبر است');
+    }
+}
+
+// تابع معکوس - میلادی به شمسی (اگر نیاز شد)
+gregorianToJalali(gregorianDate) {
+    try {
+        const date = new Date(gregorianDate);
+        return toJalaliDate(gregorianDate);
+    } catch (error) {
+        console.error('خطا در تبدیل تاریخ:', error);
+        return gregorianDate;
+    }
 }
 
 isValidTime(timeString) {
@@ -3970,6 +4194,10 @@ checkInOut() {
         this.autoSave();
         this.loadTodayRecords();
         this.updateStats();
+
+        // 🔥 خطوط اضافه‌شده
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
         
         console.log('🎊 ثبت ورود/خروج با موفقیت انجام شد');
         
@@ -8562,6 +8790,229 @@ updateStats() {
     }
 }
 
+updateMonthlyStatsWithLiveData(today, todayHours) {
+    try {
+        const now = new Date();
+
+        // helper: normalize date to YYYY-MM-DD (works with Date obj or ISO/string)
+        const normalize = (d) => {
+            if (!d && d !== 0) return '';
+            const dt = new Date(d);
+            if (isNaN(dt)) {
+                // fallback: try to accept already-normalized string
+                return String(d).slice(0, 10);
+            }
+            return dt.toISOString().slice(0, 10);
+        };
+
+        const todayNorm = normalize(today);
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        // همه رکوردهای ماه جاری (شامل یا بدون امروز) را نرمال می‌کنیم
+        const monthRecords = this.records
+            .map(r => ({ ...r, __normDate: normalize(r.date) }))
+            .filter(r => {
+                // نرمال‌ساده: بررسی سال/ماه با استفاده از تاریخ اصلی
+                const dt = new Date(r.date);
+                if (isNaN(dt)) return false;
+                return dt.getFullYear() === currentYear && (dt.getMonth() + 1) === currentMonth;
+            });
+
+        // گروه‌بندی بر اساس تاریخ نرمال‌شده
+        const recordsByDate = monthRecords.reduce((acc, r) => {
+            const k = r.__normDate || normalize(r.date);
+            if (!acc[k]) acc[k] = [];
+            acc[k].push(r);
+            return acc;
+        }, {});
+
+        // todayRecords از کل رکوردها استخراج می‌شود (ممکن است خارج ماه باشد ولی ما امروز را با todayNorm چک می‌کنیم)
+        const todayRecords = this.records.filter(r => normalize(r.date) === todayNorm);
+
+        // مجموعه روزهای کاری واقعی
+        const workDaysSet = new Set();
+
+        // بررسی هر تاریخ در ماه
+        Object.keys(recordsByDate).forEach(dateKey => {
+            const dayRecords = recordsByDate[dateKey] || [];
+
+            // استفاده از calculateDayData اگر موجود است، یا fallback به محاسبه ساده
+            let dayData = { totalHours: 0 };
+            try {
+                if (typeof this.calculateDayData === 'function') {
+                    dayData = this.calculateDayData(dayRecords);
+                } else {
+                    // fallback: شمردن جفت in/out ساده
+                    let total = 0;
+                    for (let i = 0; i < dayRecords.length - 1; i++) {
+                        if (dayRecords[i].type === 'in' && dayRecords[i + 1].type === 'out') {
+                            // اگر فرمت زمان داریم، سعی کن از calculateWorkHours استفاده کنی
+                            if (typeof this.calculateWorkHours === 'function') {
+                                total += this.calculateWorkHours(dayRecords[i].time || dayRecords[i].timestamp, dayRecords[i + 1].time || dayRecords[i + 1].timestamp);
+                            } else {
+                                total += 0; // نمیتوان محاسبه کرد؛ بنابراین حدس نمیزنیم
+                            }
+                            i++; // پرش به بعد از جفت
+                        }
+                    }
+                    dayData.totalHours = total;
+                }
+            } catch (e) {
+                dayData = { totalHours: 0 };
+            }
+
+            // اگر روز حداقل یک ساعت مفید داشته باشد یا hasValidWorkSession حقیقت دارد، آن روز را حساب کن
+            const hasValidPair = (typeof this.hasValidWorkSession === 'function') ? this.hasValidWorkSession(dayRecords) : (dayData.totalHours > 0);
+
+            if (hasValidPair || (dayData.totalHours && dayData.totalHours > 0)) {
+                workDaysSet.add(dateKey);
+            }
+        });
+
+        // حالا دربارهٔ امروز تصمیم می‌گیریم (سختگیرانه‌تر از قبل)
+        const todayHasValidPair = (typeof this.hasValidWorkSession === 'function') ? this.hasValidWorkSession(todayRecords) : (todayHours > 0);
+        const isWorkingNow = !!(this.settings && this.settings.liveStatsUpdate && this.currentStatus === 'in' && this.currentCheckInTime);
+
+        // فقط وقتی امروز واقعا رکورد ورود ثبت شده یا حداقل یک جفت وجود دارد، امروز را اضافه کن.
+        if (todayHasValidPair) {
+            workDaysSet.add(todayNorm);
+        } else if (isWorkingNow) {
+            // در حالت زنده: تنها در صورتی روز را حساب کن که یک ورود فعلی (currentCheckInTime) واقعی وجود داشته باشد
+            // و ترجیحاً حداقل یک رکورد ورود در todayRecords باشد (همچنین از اضافه‌شماری جلوگیری می‌کند)
+            const hasAnyCheckIn = todayRecords && todayRecords.some(r => r.type === 'in');
+            if (hasAnyCheckIn) {
+                workDaysSet.add(todayNorm);
+            }
+        }
+
+        const workDays = workDaysSet.size;
+        const finalWorkDays = Math.max(0, workDays || 0);
+
+        // بروز رسانی DOM به صورت ایمن
+        const workDaysElement = document.getElementById('workDays');
+        if (workDaysElement) {
+            try {
+                workDaysElement.textContent = this.toPersianDigits(finalWorkDays) + ' روز';
+            } catch {
+                workDaysElement.textContent = String(finalWorkDays) + ' روز';
+            }
+        }
+
+        // ---------- محاسبهٔ درآمد و ساعات ----------
+        // محاسبه آمار ماهانه بدون امروز (برای ایمنی از calculateDailyData استفاده می‌کنیم)
+        let monthlyDataWithoutToday = { totalHours: 0, totalIncome: 0 };
+        try {
+            const monthWithoutTodayRecords = monthRecords.filter(r => r.__normDate !== todayNorm);
+            if (typeof this.calculateDailyData === 'function') {
+                monthlyDataWithoutToday = this.calculateDailyData(monthWithoutTodayRecords);
+            } else {
+                monthlyDataWithoutToday.totalHours = monthWithoutTodayRecords.reduce((acc, r) => acc + (r.hours || 0), 0);
+                monthlyDataWithoutToday.totalIncome = 0;
+            }
+        } catch (e) {
+            monthlyDataWithoutToday = { totalHours: 0, totalIncome: 0 };
+        }
+
+        // محاسبه آمار امروز (بر اساس پارامترها / توابع موجود)
+        let todayData = { totalHours: 0, overtimeHours: 0 };
+        try {
+            todayData = (typeof this.calculateDayData === 'function') ? this.calculateDayData(todayRecords, todayNorm) : todayData;
+        } catch (e) {
+            todayData = { totalHours: 0, overtimeHours: 0 };
+        }
+
+        // اگر زنده و در حال کار هستیم، مقدار جلسه جاری را اضافه کن
+        let finalTodayHours = todayData.totalHours || 0;
+        let finalTodayOvertime = todayData.overtimeHours || 0;
+
+        if (this.settings && this.settings.liveStatsUpdate && this.currentStatus === 'in' && this.currentCheckInTime) {
+            try {
+                const nowTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0');
+                const currentSessionHours = (typeof this.calculateWorkHours === 'function') ? this.calculateWorkHours(this.currentCheckInTime, nowTime) : 0;
+                finalTodayHours = (todayData.totalHours || 0) + currentSessionHours;
+
+                // محاسبه اضافه‌کاری طبق تنظیمات (سعی می‌کنیم توابع شما را استفاده کنیم)
+                if (this.settings.overtimeDaysSettings) {
+                    const dateObj = new Date(todayNorm);
+                    const dayOfWeek = dateObj.getDay();
+                    const daySettings = this.settings.overtimeDaysSettings[dayOfWeek] || null;
+                    if (daySettings && daySettings.enabled) {
+                        if (daySettings.allDay) {
+                            finalTodayOvertime = finalTodayHours;
+                        } else {
+                            const overtimeStart = this.timeToMinutes ? this.timeToMinutes(daySettings.startTime) : null;
+                            const overtimeEnd = this.timeToMinutes ? this.timeToMinutes(daySettings.endTime) : null;
+                            if (typeof this.calculateOvertimeInSession === 'function' && overtimeStart !== null && overtimeEnd !== null) {
+                                finalTodayOvertime = (todayData.overtimeHours || 0) + this.calculateOvertimeInSession(this.currentCheckInTime, nowTime, overtimeStart, overtimeEnd);
+                            } else {
+                                finalTodayOvertime = Math.max(finalTodayHours - (this.settings.dailyHours || 0), 0);
+                            }
+                        }
+                    } else {
+                        finalTodayOvertime = Math.max(finalTodayHours - (this.settings.dailyHours || 0), 0);
+                    }
+                } else {
+                    finalTodayOvertime = Math.max(finalTodayHours - (this.settings.dailyHours || 0), 0);
+                }
+            } catch (e) {
+                // در صورت خطا از دادهٔ قبلی استفاده می‌کنیم
+            }
+        }
+
+        const finalTodayNormalHours = Math.max(0, finalTodayHours - finalTodayOvertime);
+        const todayIncome = ((finalTodayNormalHours * (this.settings.hourlyRate || 0)) + (finalTodayOvertime * (this.settings.overtimeRate || 0))) || 0;
+
+        // جمع کل ماه
+        const totalHours = (monthlyDataWithoutToday.totalHours || 0) + (finalTodayHours || 0);
+        const totalIncome = (monthlyDataWithoutToday.totalIncome || 0) + (todayIncome || 0);
+
+        // نمایش در DOM به‌صورت ایمن
+        try {
+            const mh = document.getElementById('monthlyHours');
+            if (mh) mh.textContent = this.formatHoursWithMinutes ? this.formatHoursWithMinutes(totalHours) : String(totalHours) + ' ساعت';
+        } catch (e) { /* ignore */ }
+
+        try {
+            const ms = document.getElementById('monthlySalary');
+            if (ms) ms.textContent = this.formatCurrency ? this.formatCurrency(totalIncome) : String(totalIncome);
+        } catch (e) { /* ignore */ }
+
+    } catch (error) {
+        console.error('خطا در به‌روزرسانی آمار ماهانه:', error);
+    }
+}
+
+
+// 🔧 اضافه کردن تابع کمکی برای بررسی وجود جلسه کاری معتبر
+hasValidWorkSession(records) {
+    if (!records || records.length === 0) return false;
+    
+    let i = 0;
+    while (i < records.length - 1) {
+        if (records[i].type === 'in' && records[i + 1].type === 'out') {
+            return true; // حداقل یک جفت ورود/خروج معتبر پیدا شد
+        }
+        i++;
+    }
+    
+    return false;
+}
+
+// تابع کمکی برای بررسی آیا روز کاری است
+isWorkDay(dateString) {
+    try {
+        const date = new Date(dateString);
+        const dayOfWeek = date.getDay();
+        
+        // در ایران معمولاً جمعه تعطیل است (dayOfWeek = 5)
+        // می‌توانید این منطق را بر اساس تنظیمات کاربر تغییر دهید
+        return dayOfWeek !== 5; // جمعه تعطیل
+    } catch (error) {
+        return true;
+    }
+}
+
 // تابع جدید برای به‌روزرسانی آمار ماهانه با نمایش زنده
 updateMonthlyStatsWithLiveData(today, todayHours) {
     try {
@@ -8640,9 +9091,24 @@ updateMonthlyStatsWithLiveData(today, todayHours) {
         document.getElementById('monthlySalary').textContent = this.formatCurrency(totalIncome);
         
         // به‌روزرسانی روزهای کاری
-        const workDaysElement = document.getElementById('workDays');
+const workDaysElement = document.getElementById('workDays');
         if (workDaysElement) {
-            const workDays = new Set([...monthRecords.map(record => record.date), today]).size;
+            
+            // ✅ راه‌حل:
+            // 1. ابتدا Set روزهای کاری گذشته (بدون امروز) را بسازید
+            const pastWorkDays = new Set(monthRecords.map(record => record.date));
+            
+            // 2. بررسی کنید آیا امروز رکوردی دارد یا نه
+            // (این متغیر از قبل در تابع شما محاسبه شده است)
+            // const todayRecords = this.records.filter(record => record.date === today);
+
+            // 3. فقط اگر امروز رکورد داشت، آن را به Set اضافه کنید
+            if (todayRecords.length > 0) {
+                pastWorkDays.add(today);
+            }
+
+            // 4. حالا اندازه Set صحیح است
+            const workDays = pastWorkDays.size;
             workDaysElement.textContent = this.toPersianDigits(workDays) + ' روز';
         }
         
@@ -9500,66 +9966,99 @@ getDailyDetails(monthRecords) {
 }
 
 // محاسبه داده‌های روز
-// اصلاح تابع calculateDayData برای استفاده از سیستم جدید
+// محاسبه داده‌های روز - نسخه ایمن‌تر
 calculateDayData(records, date) {
-    records.sort((a, b) => a.timestamp - b.timestamp);
-    
-    let firstIn = null;
-    let lastOut = null;
-    let totalHours = 0;
-    
-    // پیدا کردن اولین ورود و آخرین خروج
-    records.forEach(record => {
-        if (record.type === 'in' && !firstIn) {
-            firstIn = record.time;
+    try {
+        if (!records || records.length === 0) {
+            return {
+                firstIn: null,
+                lastOut: null,
+                totalHours: 0,
+                overtimeHours: 0,
+                dailyIncome: 0,
+                status: 'غیبت'
+            };
         }
-        if (record.type === 'out') {
-            lastOut = record.time;
+
+        // مرتب کردن رکوردها بر اساس زمان
+        records.sort((a, b) => a.timestamp - b.timestamp);
+        
+        let firstIn = null;
+        let lastOut = null;
+        let totalHours = 0;
+        
+        // پیدا کردن اولین ورود و آخرین خروج
+        records.forEach(record => {
+            if (record.type === 'in' && !firstIn) {
+                firstIn = record.time;
+            }
+            if (record.type === 'out') {
+                lastOut = record.time;
+            }
+        });
+        
+        // محاسبه ساعات کار
+        let i = 0;
+        while (i < records.length - 1) {
+            if (records[i].type === 'in' && records[i + 1].type === 'out') {
+                const hours = this.calculateWorkHours(records[i].time, records[i + 1].time);
+                totalHours += hours;
+                i += 2;
+            } else {
+                i++;
+            }
         }
-    });
-    
-    // محاسبه ساعات کار
-    let i = 0;
-    while (i < records.length - 1) {
-        if (records[i].type === 'in' && records[i + 1].type === 'out') {
-            const hours = this.calculateWorkHours(records[i].time, records[i + 1].time);
-            totalHours += hours;
-            i += 2;
+
+        // محاسبه اضافه کاری
+        const dateObj = new Date(date);
+        const dayOfWeek = dateObj.getDay();
+        const daySettings = this.settings.overtimeDaysSettings ? 
+            this.settings.overtimeDaysSettings[dayOfWeek] : null;
+        
+        let overtimeHours = 0;
+        
+        if (daySettings && daySettings.enabled) {
+            if (daySettings.allDay) {
+                overtimeHours = totalHours;
+            } else {
+                overtimeHours = this.calculateOvertimeHoursForDay(records, date);
+            }
         } else {
-            i++;
+            overtimeHours = Math.max(totalHours - this.settings.dailyHours, 0);
         }
-    }
+        
+        const normalHours = totalHours - overtimeHours;
+        const dailyIncome = (normalHours * this.settings.hourlyRate) + (overtimeHours * this.settings.overtimeRate);
 
-    // محاسبه اضافه کاری با سیستم جدید
-    const overtimeHours = this.calculateOvertimeHoursForDay(records, date);
-    const normalHours = totalHours - overtimeHours;
-    
-    const dailyIncome = (normalHours * this.settings.hourlyRate) + (overtimeHours * this.settings.overtimeRate);
-    
-    // تعیین وضعیت روز
-    let status = 'عادی';
-    if (totalHours === 0) status = 'غیبت';
-    else if (totalHours < this.settings.dailyHours * 0.5) status = 'تأخیر زیاد';
-    else if (totalHours < this.settings.dailyHours) status = 'تأخیر';
-    else if (overtimeHours > 0) status = 'اضافه‌کاری';
-    
-    // اگر روز اضافه کاری است
-    const dateObj = new Date(date);
-    const dayOfWeek = dateObj.getDay();
-    const daySettings = this.settings.overtimeDaysSettings ? this.settings.overtimeDaysSettings[dayOfWeek] : null;
-    if (daySettings && daySettings.enabled) {
-        status = daySettings.allDay ? 'تعطیل کاری' : 'اضافه کاری زمانی';
+        return {
+            firstIn: firstIn,
+            lastOut: lastOut,
+            totalHours: totalHours || 0,
+            overtimeHours: overtimeHours || 0,
+            dailyIncome: dailyIncome || 0,
+            status: this.getDayStatus(totalHours, overtimeHours)
+        };
+        
+    } catch (error) {
+        console.error('خطا در محاسبه داده‌های روز:', error);
+        return {
+            firstIn: null,
+            lastOut: null,
+            totalHours: 0,
+            overtimeHours: 0,
+            dailyIncome: 0,
+            status: 'خطا'
+        };
     }
+}
 
-    return {
-        firstIn,
-        lastOut,
-        totalHours,
-        normalHours,
-        overtimeHours,
-        dailyIncome,
-        status
-    };
+// تابع کمکی برای وضعیت روز
+getDayStatus(totalHours, overtimeHours) {
+    if (totalHours === 0) return 'غیبت';
+    if (totalHours < this.settings.dailyHours * 0.5) return 'کمکاری';
+    if (overtimeHours > 2) return 'اضافه‌کاری زیاد';
+    if (overtimeHours > 0) return 'اضافه‌کاری';
+    return 'عادی';
 }
 
 // دریافت نام روز هفته
@@ -9667,6 +10166,7 @@ getDayComments(dayData) {
                 const notificationText = document.getElementById('notificationText');
 
                 notificationText.textContent = message;
+
                 notification.style.zIndex = '11000';
                 notification.className = 'notification';
                 notification.classList.add(`notification-${type}`, 'show');
@@ -9842,9 +10342,6 @@ showConfirmExitModal() {
 
 
 
-// ایجاد مودال تایید خروج
-// ایجاد مودال تایید خروج - نسخه اصلاح شده
-// ایجاد مودال تایید خروج - نسخه کاملاً اصلاح شده با z-index بالا
 createConfirmExitModal() {
     if (document.getElementById('confirmExitModal')) return;
 
@@ -9961,8 +10458,7 @@ setupInitialReportsState() {
     }
 }
 
-// سیستم تب‌بندی تنظیمات
-// در تابع openSettingsModal، به حالت قبلی برگردید:
+
 openSettingsModal() {
     try {
         // پاک کردن مودال قبلی اگر وجود دارد
@@ -9991,6 +10487,11 @@ openSettingsModal() {
                             <i class="fas fa-palette"></i>
                             <span>تنظیمات نمایش</span>
                         </div>
+
+                    <div class="settings-tab" data-tab="archive">
+                        <i class="fas fa-archive"></i>
+                        <span> مدیریت آرشیو</span>
+                    </div>
                         <div class="settings-tab" data-tab="backup">
                             <i class="fas fa-tools"></i>
                             <span>تنظیمات پشتیبان‌گیری</span>
@@ -10050,6 +10551,1912 @@ openSettingsModal() {
         this.showNotification('❌ خطا در بارگذاری تنظیمات', 'error');
     }
 }
+
+// این تابع را به کلاس AttendanceApp اضافه کنید
+loadArchiveTab(form) {
+    form.innerHTML = `
+        <div class="tab-content active" id="archiveTab">
+            <h3 class="tab-title">💾 مدیریت آرشیو پیشرفته</h3>
+            
+            <!-- فیلترهای پیشرفته -->
+            <div class="archive-filters" style="background: var(--background); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 15px;">🔍 فیلترهای پیشرفته</h4>
+                
+                <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">نوع فیلتر</label>
+                        <select class="form-control" id="archiveFilterType">
+                            <option value="day">روز خاص</option>
+                            <option value="month">ماه خاص</option>
+                            <option value="year">سال خاص</option>
+                            <option value="range">بازه زمانی</option>
+                            <option value="all">همه رکوردها</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">سال (شمسی)</label>
+                        <input type="number" class="form-control" id="archiveYear" placeholder="1403" min="1400" max="1500">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">ماه</label>
+                        <select class="form-control" id="archiveMonth">
+                            <option value="">همه ماه‌ها</option>
+                            <option value="1">فروردین</option>
+                            <option value="2">اردیبهشت</option>
+                            <option value="3">خرداد</option>
+                            <option value="4">تیر</option>
+                            <option value="5">مرداد</option>
+                            <option value="6">شهریور</option>
+                            <option value="7">مهر</option>
+                            <option value="8">آبان</option>
+                            <option value="9">آذر</option>
+                            <option value="10">دی</option>
+                            <option value="11">بهمن</option>
+                            <option value="12">اسفند</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">روز</label>
+                        <select class="form-control" id="archiveDay">
+                            <option value="">همه روزها</option>
+                            ${Array.from({length: 31}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- بازه زمانی -->
+                <div id="dateRangeFilter" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">بازه زمانی (شمسی)</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" class="form-control" id="archiveStartDate" placeholder="1403/01/01" style="text-align: center;">
+                            <span>تا</span>
+                            <input type="text" class="form-control" id="archiveEndDate" placeholder="1403/12/29" style="text-align: center;">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-primary" id="searchArchiveBtn">
+                        <i class="fas fa-search"></i> اعمال فیلتر
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="resetArchiveFiltersBtn">
+                        <i class="fas fa-redo"></i> بازنشانی فیلترها
+                    </button>
+                </div>
+            </div>
+
+            <!-- آمار سریع -->
+            <div id="archiveStats" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 15px; border-radius: var(--radius); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;" id="statsTotalRecords">0</div>
+                        <div style="font-size: 12px;">تعداد رکوردها</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;" id="statsTotalHours">0</div>
+                        <div style="font-size: 12px;">ساعات کل</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;" id="statsTotalIncome">0</div>
+                        <div style="font-size: 12px;">درآمد کل</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌های عملیات -->
+            <div class="action-buttons-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                <button type="button" class="btn btn-success" id="addArchiveRecordBtn">
+                    <i class="fas fa-plus-circle"></i> افزودن رکورد جدید
+                </button>
+                <button type="button" class="btn btn-info" id="bulkActionsBtn">
+                    <i class="fas fa-tasks"></i> عملیات گروهی
+                </button>
+                <button type="button" class="btn btn-warning" id="exportArchiveBtn">
+                    <i class="fas fa-file-export"></i> خروجی اکسل
+                </button>
+                <button type="button" class="btn btn-danger" id="archiveCleanupBtn">
+                    <i class="fas fa-broom"></i> پاکسازی آرشیو
+                </button>
+            </div>
+
+            <!-- جدول نتایج -->
+            <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                <table id="archiveTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" id="selectAllArchive">
+                            </th>
+                            <th width="120">تاریخ (شمسی)</th>
+                            <th width="100">روز هفته</th>
+                            <th width="100">اولین ورود</th>
+                            <th width="100">آخرین خروج</th>
+                            <th width="80">ساعات کار</th>
+                            <th width="80">اضافه کاری</th>
+                            <th width="120">درآمد روز</th>
+                            <th width="80">وضعیت</th>
+                            <th width="150">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archiveTableBody">
+                        <!-- داده‌ها اینجا لود می‌شوند -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- صفحه‌بندی -->
+            <div class="pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: var(--background); border-radius: var(--radius);">
+                <div>
+                    <span id="archivePaginationInfo">نمایش ۰ از ۰ رکورد</span>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn btn-sm btn-outline" id="archivePrevPage" disabled>قبلی</button>
+                    <span id="archivePageNumbers" style="padding: 5px 10px;"></span>
+                    <button class="btn btn-sm btn-outline" id="archiveNextPage" disabled>بعدی</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // تنظیم تاریخ امروز به عنوان پیشفرض
+    this.setDefaultArchiveDates();
+    
+    // راه‌اندازی Event Listeners
+    this.setupArchiveEventListeners();
+    
+    // جستجوی اولیه
+    this.searchArchive();
+}
+
+setupArchiveEventListeners() {
+    // تغییر نوع فیلتر
+    document.getElementById('archiveFilterType').addEventListener('change', (e) => {
+        this.handleArchiveFilterTypeChange(e.target.value);
+    });
+    
+    // جستجو
+    document.getElementById('searchArchiveBtn').addEventListener('click', () => {
+        this.searchArchive();
+    });
+    
+    // بازنشانی فیلترها
+    document.getElementById('resetArchiveFiltersBtn').addEventListener('click', () => {
+        this.resetArchiveFilters();
+    });
+    
+    // افزودن رکورد جدید
+    document.getElementById('addArchiveRecordBtn').addEventListener('click', () => {
+        this.openAddArchiveRecordModal();
+    });
+    
+    // عملیات گروهی
+    document.getElementById('bulkActionsBtn').addEventListener('click', () => {
+        this.openBulkActionsModal();
+    });
+    
+    // خروجی
+    document.getElementById('exportArchiveBtn').addEventListener('click', () => {
+        this.exportArchiveToExcel();
+    });
+    
+    // پاکسازی - استفاده از نسخه جدید
+    document.getElementById('archiveCleanupBtn').addEventListener('click', () => {
+        this.createArchiveCleanupModal(); // استفاده از نسخه جدید
+    });
+    
+    // انتخاب همه
+    document.getElementById('selectAllArchive').addEventListener('change', (e) => {
+        this.toggleSelectAllArchive(e.target.checked);
+    });
+}
+
+// تغییر نوع فیلتر
+handleArchiveFilterTypeChange(filterType) {
+    const dateRangeFilter = document.getElementById('dateRangeFilter');
+    
+    if (filterType === 'range') {
+        dateRangeFilter.style.display = 'block';
+    } else {
+        dateRangeFilter.style.display = 'none';
+    }
+}
+
+
+// تنظیم تاریخ‌های پیشفرض
+setDefaultArchiveDates() {
+    const currentJalali = this.getCurrentJalaliDate();
+    
+    document.getElementById('archiveYear').value = currentJalali.year;
+    document.getElementById('archiveMonth').value = currentJalali.month;
+    document.getElementById('archiveDay').value = currentJalali.day;
+    
+    // تاریخ شروع و پایان پیشفرض (اول و آخر ماه جاری)
+    document.getElementById('archiveStartDate').value = `${currentJalali.year}/${currentJalali.month.toString().padStart(2, '0')}/01`;
+    document.getElementById('archiveEndDate').value = `${currentJalali.year}/${currentJalali.month.toString().padStart(2, '0')}/29`;
+}
+
+// تابع جستجو در آرشیو - نسخه اصلاح شده
+searchArchive() {
+    try {
+        console.log('🔍 شروع جستجوی پیشرفته در آرشیو...');
+        
+        const filterType = document.getElementById('archiveFilterType').value;
+        const year = document.getElementById('archiveYear').value;
+        const month = document.getElementById('archiveMonth').value;
+        const day = document.getElementById('archiveDay').value;
+        const startDate = document.getElementById('archiveStartDate').value;
+        const endDate = document.getElementById('archiveEndDate').value;
+
+        let filteredRecords = this.records;
+
+        // اعمال فیلترها بر اساس نوع
+        if (filterType === 'day' && year && month && day) {
+            filteredRecords = this.filterByJalaliDay(year, month, day);
+        } else if (filterType === 'month' && year && month) {
+            filteredRecords = this.filterByJalaliMonth(year, month);
+        } else if (filterType === 'year' && year) {
+            filteredRecords = this.filterByJalaliYear(year);
+        } else if (filterType === 'range' && startDate && endDate) {
+            filteredRecords = this.filterByJalaliDateRange(startDate, endDate);
+        }
+        // اگر all باشد، همه رکوردها نمایش داده می‌شوند
+
+        console.log(`✅ ${filteredRecords.length} رکورد پیدا شد`);
+        
+        // نمایش نتایج
+        this.displayArchiveResults(filteredRecords);
+        
+        // به‌روزرسانی آمار
+        this.updateArchiveStats(filteredRecords);
+
+    } catch (error) {
+        console.error('❌ خطا در جستجوی آرشیو:', error);
+        this.showNotification('❌ خطا در جستجوی آرشیو', 'error');
+    }
+}
+
+// فیلتر بر اساس روز شمسی
+filterByJalaliDay(year, month, day) {
+    return this.records.filter(record => {
+        try {
+            const jalaliDate = toJalaliDate(record.date).split('/');
+            return parseInt(jalaliDate[0]) === parseInt(year) && 
+                   parseInt(jalaliDate[1]) === parseInt(month) && 
+                   parseInt(jalaliDate[2]) === parseInt(day);
+        } catch (error) {
+            return false;
+        }
+    });
+}
+
+// فیلتر بر اساس ماه شمسی
+filterByJalaliMonth(year, month) {
+    return this.records.filter(record => {
+        try {
+            const jalaliDate = toJalaliDate(record.date).split('/');
+            return parseInt(jalaliDate[0]) === parseInt(year) && 
+                   parseInt(jalaliDate[1]) === parseInt(month);
+        } catch (error) {
+            return false;
+        }
+    });
+}
+
+// فیلتر بر اساس سال شمسی
+filterByJalaliYear(year) {
+    return this.records.filter(record => {
+        try {
+            const jalaliDate = toJalaliDate(record.date).split('/');
+            return parseInt(jalaliDate[0]) === parseInt(year);
+        } catch (error) {
+            return false;
+        }
+    });
+}
+
+// فیلتر بر اساس بازه زمانی شمسی
+filterByJalaliDateRange(startDate, endDate) {
+    return this.records.filter(record => {
+        try {
+            const recordJalali = toJalaliDate(record.date);
+            return this.isJalaliDateInRange(recordJalali, startDate, endDate);
+        } catch (error) {
+            return false;
+        }
+    });
+}
+
+// بررسی قرار گرفتن تاریخ شمسی در بازه
+isJalaliDateInRange(date, startDate, endDate) {
+    const [dateYear, dateMonth, dateDay] = date.split('/').map(Number);
+    const [startYear, startMonth, startDay] = startDate.split('/').map(Number);
+    const [endYear, endMonth, endDay] = endDate.split('/').map(Number);
+    
+    const dateNum = dateYear * 10000 + dateMonth * 100 + dateDay;
+    const startNum = startYear * 10000 + startMonth * 100 + startDay;
+    const endNum = endYear * 10000 + endMonth * 100 + endDay;
+    
+    return dateNum >= startNum && dateNum <= endNum;
+}
+
+// نمایش نتایج جستجو در آرشیو - نسخه اصلاح شده
+displayArchiveResults(records) {
+    const tbody = document.getElementById('archiveTableBody');
+    
+    if (!tbody) {
+        console.error('❌ المان جدول آرشیو پیدا نشد');
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    if (records.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-light);">
+                    <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
+                    هیچ رکوردی مطابق با فیلترهای شما یافت نشد
+                    <br>
+                    <small style="margin-top: 10px; display: block;">
+                        از فیلترهای مختلف استفاده کنید یا رکورد جدید اضافه کنید
+                    </small>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    // گروه‌بندی رکوردها بر اساس تاریخ
+    const dailyRecords = {};
+    records.forEach(record => {
+        if (!dailyRecords[record.date]) {
+            dailyRecords[record.date] = [];
+        }
+        dailyRecords[record.date].push(record);
+    });
+
+    // نمایش هر روز به صورت مرتب شده
+    Object.keys(dailyRecords)
+        .sort((a, b) => new Date(b) - new Date(a)) // مرتب سازی نزولی
+        .forEach(date => {
+            const dayRecords = dailyRecords[date];
+            const dayData = this.calculateDayData(dayRecords, date);
+            const jalaliDate = toJalaliDate(date);
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="checkbox" class="archive-record-checkbox" data-date="${date}">
+                </td>
+                <td>
+                    <strong>${jalaliDate}</strong>
+                    <br>
+                    <small style="color: var(--text-light); font-size: 11px;">
+                        ${this.formatGregorianDate(date)}
+                    </small>
+                </td>
+                <td>${this.getJalaliDayName(date)}</td>
+                <td>
+                    ${dayData.firstIn ? `
+                        <span class="time-badge in-time">${this.formatTime(dayData.firstIn)}</span>
+                    ` : '<span class="no-data">---</span>'}
+                </td>
+                <td>
+                    ${dayData.lastOut ? `
+                        <span class="time-badge out-time">${this.formatTime(dayData.lastOut)}</span>
+                    ` : '<span class="no-data">---</span>'}
+                </td>
+                <td>
+                    <span class="hours-badge">${dayData.totalHours.toFixed(2)}</span>
+                </td>
+                <td>
+                    ${dayData.overtimeHours > 0 ? `
+                        <span class="overtime-badge">${dayData.overtimeHours.toFixed(2)}</span>
+                    ` : '<span class="no-overtime">۰</span>'}
+                </td>
+                <td>
+                    <span class="income-badge">${this.formatCurrency(dayData.dailyIncome)}</span>
+                </td>
+                <td>
+                    ${this.getDayStatusBadge(dayData)}
+                </td>
+                <td>
+                    <div class="action-buttons" style="display: flex; gap: 5px; justify-content: center;">
+                        <button class="btn btn-sm btn-info view-day-details" data-date="${date}" title="مشاهده جزئیات">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning edit-archive-day" data-date="${date}" title="ویرایش روز">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-archive-day" data-date="${date}" title="حذف روز">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+    // اضافه کردن Event Listeners
+    this.attachArchiveRowEventListeners();
+}
+
+// فرمت تاریخ میلادی برای نمایش
+formatGregorianDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fa-IR');
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// دریافت نام روز هفته شمسی
+getJalaliDayName(dateString) {
+    const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
+    const date = new Date(dateString);
+    return days[date.getDay()];
+}
+
+// ایجاد نشانگر وضعیت روز
+getDayStatusBadge(dayData) {
+    if (dayData.totalHours === 0) {
+        return '<span class="status-badge absent">غیبت</span>';
+    } else if (dayData.totalHours < this.settings.dailyHours * 0.5) {
+        return '<span class="status-badge low-attendance">کمکاری</span>';
+    } else if (dayData.overtimeHours > 2) {
+        return '<span class="status-badge high-overtime">اضافه‌کاری زیاد</span>';
+    } else if (dayData.overtimeHours > 0) {
+        return '<span class="status-badge overtime">اضافه‌کاری</span>';
+    } else {
+        return '<span class="status-badge normal">عادی</span>';
+    }
+}
+
+
+editArchiveDay(date) {
+    try {
+        console.log('✏️ ویرایش روز:', date);
+        
+        const dayRecords = this.records.filter(record => record.date === date);
+        
+        if (dayRecords.length === 0) {
+            this.showNotification('⚠️ هیچ رکوردی برای این تاریخ پیدا نشد', 'warning');
+            return;
+        }
+
+        // استفاده از تابع بهبود یافته openEditDayModal
+        this.openEditDayModal(date, dayRecords);
+        
+    } catch (error) {
+        console.error('❌ خطا در ویرایش روز:', error);
+        this.showNotification('❌ خطا در باز کردن ویرایشگر', 'error');
+    }
+}
+
+// تابع اصلاح فرمت زمان
+fixTimeFormat(timeString) {
+    if (!timeString) return '00:00:00';
+    
+    try {
+        const parts = timeString.split(':');
+        
+        // حذف بخش‌های اضافی (بیش از 3 بخش)
+        const timeParts = parts.slice(0, 3);
+        
+        // اطمینان از داشتن 3 بخش
+        while (timeParts.length < 3) {
+            timeParts.push('00');
+        }
+        
+        // فرمت کردن به HH:mm:ss
+        const formattedTime = timeParts
+            .map(part => part.padStart(2, '0'))
+            .join(':');
+        
+        return formattedTime;
+        
+    } catch (error) {
+        console.error('خطا در اصلاح فرمت زمان:', error);
+        return '00:00:00';
+    }
+}
+
+// تابع تبدیل زمان به فرمت input type="time"
+convertTimeForInput(timeString) {
+    const fixedTime = this.fixTimeFormat(timeString);
+    return fixedTime.substring(0, 8); // برگرداندن HH:mm:ss
+}
+
+// حذف رکوردهای انتخاب شده
+deleteSelectedArchiveRecords() {
+    const selectedDates = []; // اینجا می‌توانید چک‌باکس برای انتخاب اضافه کنید
+    if (selectedDates.length === 0) {
+        this.showNotification('⚠️ لطفاً حداقل یک رکورد انتخاب کنید', 'warning');
+        return;
+    }
+
+    if (confirm(`آیا از حذف ${selectedDates.length} رکورد انتخاب شده اطمینان دارید؟`)) {
+        this.records = this.records.filter(record => !selectedDates.includes(record.date));
+        this.saveToStorage('attendanceRecords', this.records);
+        this.showNotification(`✅ ${selectedDates.length} رکورد با موفقیت حذف شد`, 'success');
+        this.searchArchive();
+    }
+}
+
+// خروجی از آرشیو
+exportArchiveData() {
+    const filterType = document.getElementById('archiveFilterType').value;
+    const year = parseInt(document.getElementById('archiveYear').value);
+    const month = parseInt(document.getElementById('archiveMonth').value);
+    
+    let title = '';
+    if (filterType === 'day') {
+        const day = parseInt(document.getElementById('archiveDay').value);
+        title = `آرشیو روز ${day} ماه ${month} سال ${year}`;
+    } else if (filterType === 'month') {
+        title = `آرشیو ماه ${month} سال ${year}`;
+    } else {
+        title = `آرشیو سال ${year}`;
+    }
+
+    this.exportToExcel();
+}
+
+// باز کردن مودال افزودن رکورد به آرشیو
+openAddArchiveRecordModal() {
+    if (!document.getElementById('addArchiveRecordModal')) {
+        this.createAddArchiveRecordModal();
+    }
+    
+    const modal = document.getElementById('addArchiveRecordModal');
+    
+    // تنظیم تاریخ امروز به عنوان پیشفرض با بررسی وجود المان‌ها
+    const yearInput = document.getElementById('archiveRecordYear');
+    const monthSelect = document.getElementById('archiveRecordMonth');
+    const daySelect = document.getElementById('archiveRecordDay');
+    
+    if (yearInput && monthSelect && daySelect) {
+        const currentJalali = this.getCurrentJalaliDate();
+        yearInput.value = currentJalali.year;
+        monthSelect.value = currentJalali.month;
+        daySelect.value = currentJalali.day;
+    }
+    
+    modal.style.display = 'flex';
+}
+// ایجاد مودال افزودن رکورد
+createAddArchiveRecordModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'addArchiveRecordModal';
+    modal.style.zIndex = '10010';
+    
+    // گرفتن تاریخ جاری برای تنظیم پیشفرض
+    const currentJalali = this.getCurrentJalaliDate();
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; z-index: 10011;">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ افزودن رکورد جدید به آرشیو</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="addArchiveRecordForm">
+                <div class="form-group">
+                    <label class="form-label">📅 تاریخ شمسی</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" class="form-control" id="archiveRecordYear" 
+                               placeholder="سال" min="1400" max="1500" value="${currentJalali.year}" required>
+                        <select class="form-control" id="archiveRecordMonth" required>
+                            ${Array.from({length: 12}, (_, i) => 
+                                `<option value="${i+1}" ${i+1 === currentJalali.month ? 'selected' : ''}>
+                                    ${this.getJalaliMonthName(i+1)}
+                                </option>`
+                            ).join('')}
+                        </select>
+                        <select class="form-control" id="archiveRecordDay" required>
+                            ${Array.from({length: 31}, (_, i) => 
+                                `<option value="${i+1}" ${i+1 === currentJalali.day ? 'selected' : ''}>
+                                    ${i+1}
+                                </option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <small>فرمت: سال/ماه/روز (شمسی)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">🕒 نوع رکورد</label>
+                    <select class="form-control" id="archiveRecordType" required>
+                        <option value="in">ورود 👉</option>
+                        <option value="out">خروج 👈</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">⏰ ساعت</label>
+                    <div class="time-picker-container">
+                        <div class="time-picker" style="display: flex; gap: 5px; align-items: center;">
+                            <select class="form-control" id="archiveRecordHour" required>
+                                ${Array.from({length: 24}, (_, i) => 
+                                    `<option value="${i.toString().padStart(2, '0')}" ${i === 8 ? 'selected' : ''}>
+                                        ${toPersianDigits(i.toString().padStart(2, '0'))}
+                                    </option>`
+                                ).join('')}
+                            </select>
+                            <span>:</span>
+                            <select class="form-control" id="archiveRecordMinute" required>
+                                ${Array.from({length: 60}, (_, i) => 
+                                    `<option value="${i.toString().padStart(2, '0')}" ${i === 0 ? 'selected' : ''}>
+                                        ${toPersianDigits(i.toString().padStart(2, '0'))}
+                                    </option>`
+                                ).join('')}
+                            </select>
+                            <span>:</span>
+                            <select class="form-control" id="archiveRecordSecond" required>
+                                ${Array.from({length: 60}, (_, i) => 
+                                    `<option value="${i.toString().padStart(2, '0')}" ${i === 0 ? 'selected' : ''}>
+                                        ${toPersianDigits(i.toString().padStart(2, '0'))}
+                                    </option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="archiveRecordIsManual" checked>
+                        📝 علامت‌گذاری به عنوان رکورد دستی
+                    </label>
+                </div>
+                
+                <div class="action-buttons" style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" id="cancelAddArchiveRecord" style="flex: 1;">
+                        <i class="fas fa-times"></i> انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-plus"></i> افزودن رکورد
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Event Listeners
+    document.getElementById('addArchiveRecordForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.addArchiveRecord();
+    });
+    
+    document.getElementById('cancelAddArchiveRecord').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+
+// تنظیم تاریخ پیشفرض برای افزودن رکورد
+setDefaultArchiveRecordDate() {
+    const currentJalali = this.getCurrentJalaliDate();
+    
+    document.getElementById('archiveRecordYear').value = currentJalali.year;
+    document.getElementById('archiveRecordMonth').value = currentJalali.month;
+    document.getElementById('archiveRecordDay').value = currentJalali.day;
+}
+
+
+addArchiveRecord() {
+    try {
+        const year = document.getElementById('archiveRecordYear').value;
+        const month = document.getElementById('archiveRecordMonth').value;
+        const day = document.getElementById('archiveRecordDay').value;
+        const type = document.getElementById('archiveRecordType').value;
+        const hour = document.getElementById('archiveRecordHour').value;
+        const minute = document.getElementById('archiveRecordMinute').value;
+        const second = document.getElementById('archiveRecordSecond').value;
+        const isManual = document.getElementById('archiveRecordIsManual').checked;
+        
+        // ساخت تاریخ شمسی به فرمت yyyy/mm/dd
+        const jalaliDate = `${year}/${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
+        const timeString = `${hour}:${minute}:${second}`;
+        
+        console.log('📅 تاریخ شمسی وارد شده:', jalaliDate);
+        
+        // تبدیل تاریخ شمسی به میلادی
+        const gregorianDate = this.jalaliToGregorian(jalaliDate);
+        console.log('📅 تاریخ میلادی تبدیل شده:', gregorianDate);
+        
+        const newRecord = {
+            id: Date.now(),
+            type: type,
+            time: timeString,
+            date: gregorianDate,
+            timestamp: new Date(`${gregorianDate}T${timeString}`).getTime(),
+            manual: isManual
+        };
+        
+        console.log('🆕 رکورد جدید:', newRecord);
+        
+        this.records.push(newRecord);
+        this.saveToStorage('attendanceRecords', this.records);
+        
+        document.getElementById('addArchiveRecordModal').style.display = 'none';
+        this.showNotification('✅ رکورد جدید با موفقیت افزوده شد', 'success');
+        
+        // به‌روزرسانی نمایش آرشیو
+        this.searchArchive();
+        
+    } catch (error) {
+        console.error('❌ خطا در افزودن رکورد:', error);
+        this.showNotification(`❌ خطا در افزودن رکورد: ${error.message}`, 'error');
+    }
+}
+
+
+attachArchiveRowEventListeners() {
+    try {
+        // مشاهده جزئیات روز
+        document.querySelectorAll('.view-day-details').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const date = e.target.closest('button').dataset.date;
+                this.viewDayDetails(date);
+            });
+        });
+        
+        // ویرایش روز - با سیستم کشویی جدید
+        document.querySelectorAll('.edit-archive-day').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const date = e.target.closest('button').dataset.date;
+                this.editArchiveDay(date);
+            });
+        });
+        
+        // حذف روز
+        document.querySelectorAll('.delete-archive-day').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const date = e.target.closest('button').dataset.date;
+                this.deleteArchiveDay(date);
+            });
+        });
+        
+        // چک‌باکس‌های انتخاب
+        document.querySelectorAll('.archive-record-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                this.updateArchiveSelection();
+            });
+        });
+        
+    } catch (error) {
+        console.error('خطا در اتصال Event Listeners سطرهای آرشیو:', error);
+    }
+}
+
+// مشاهده جزئیات روز
+viewDayDetails(date) {
+    const dayRecords = this.records.filter(record => record.date === date);
+    this.openDayDetailsModal(date, dayRecords);
+}
+
+// ویرایش روز
+editArchiveDay(date) {
+    const dayRecords = this.records.filter(record => record.date === date);
+    this.openEditDayModal(date, dayRecords);
+}
+
+// حذف روز کامل از آرشیو
+deleteArchiveDay(date) {
+    const jalaliDate = toJalaliDate(date);
+    const dayRecords = this.records.filter(record => record.date === date);
+    
+    if (dayRecords.length === 0) {
+        this.showNotification('⚠️ هیچ رکوردی برای این تاریخ پیدا نشد', 'warning');
+        return;
+    }
+
+    if (confirm(`آیا از حذف تمام ${dayRecords.length} رکورد تاریخ ${jalaliDate} اطمینان دارید؟\nاین عمل غیرقابل بازگشت است.`)) {
+        this.records = this.records.filter(record => record.date !== date);
+        this.saveToStorage('attendanceRecords', this.records);
+        this.showNotification(`✅ ${dayRecords.length} رکورد تاریخ ${jalaliDate} حذف شد`, 'success');
+        this.searchArchive(); // به‌روزرسانی نمایش
+    }
+}
+
+// انتخاب همه رکوردها
+toggleSelectAllArchive(checked) {
+    document.querySelectorAll('.archive-record-checkbox').forEach(checkbox => {
+        checkbox.checked = checked;
+    });
+    this.updateArchiveSelection();
+}
+
+// به‌روزرسانی وضعیت انتخاب
+updateArchiveSelection() {
+    const selectedCount = document.querySelectorAll('.archive-record-checkbox:checked').length;
+    console.log(`✅ ${selectedCount} رکورد انتخاب شده`);
+}
+
+// بازنشانی فیلترها
+resetArchiveFilters() {
+    document.getElementById('archiveFilterType').value = 'day';
+    document.getElementById('archiveYear').value = '';
+    document.getElementById('archiveMonth').value = '';
+    document.getElementById('archiveDay').value = '';
+    document.getElementById('archiveStartDate').value = '';
+    document.getElementById('archiveEndDate').value = '';
+    document.getElementById('dateRangeFilter').style.display = 'none';
+    
+    this.showNotification('✅ فیلترها بازنشانی شدند', 'success');
+}
+
+// به‌روزرسانی آمار آرشیو
+// به‌روزرسانی آمار آرشیو - نسخه اصلاح شده
+updateArchiveStats(records) {
+    try {
+        const totalRecords = records.length;
+        
+        // محاسبه مجموع ساعات و درآمد
+        let totalHours = 0;
+        let totalIncome = 0;
+        const processedDates = new Set();
+        
+        records.forEach(record => {
+            if (!processedDates.has(record.date)) {
+                processedDates.add(record.date);
+                const dayRecords = records.filter(r => r.date === record.date);
+                const dayData = this.calculateDayData(dayRecords, record.date);
+                totalHours += dayData.totalHours;
+                totalIncome += dayData.dailyIncome;
+            }
+        });
+
+        // نمایش آمار
+        document.getElementById('statsTotalRecords').textContent = 
+            this.toPersianDigits(totalRecords);
+        
+        document.getElementById('statsTotalHours').textContent = 
+            totalHours > 0 ? this.toPersianDigits(totalHours.toFixed(1)) : '۰';
+        
+        document.getElementById('statsTotalIncome').textContent = 
+            totalIncome > 0 ? this.toPersianDigits(Math.round(totalIncome).toLocaleString()) : '۰';
+        
+    } catch (error) {
+        console.error('خطا در به‌روزرسانی آمار آرشیو:', error);
+        // تنظیم مقادیر پیشفرض در صورت خطا
+        document.getElementById('statsTotalRecords').textContent = '۰';
+        document.getElementById('statsTotalHours').textContent = '۰';
+        document.getElementById('statsTotalIncome').textContent = '۰';
+    }
+}
+
+// مودال عملیات گروهی
+openBulkActionsModal() {
+    const selectedCount = document.querySelectorAll('.archive-record-checkbox:checked').length;
+    
+    if (selectedCount === 0) {
+        this.showNotification('⚠️ لطفاً حداقل یک رکورد انتخاب کنید', 'warning');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'bulkActionsModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">⚡ عملیات گروهی</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <p>${selectedCount} رکورد انتخاب شده است. عملیات مورد نظر را انتخاب کنید:</p>
+                
+                <div class="action-buttons" style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+                    <button class="btn btn-danger" id="bulkDeleteBtn">
+                        <i class="fas fa-trash"></i> حذف رکوردهای انتخاب شده
+                    </button>
+                    <button class="btn btn-warning" id="bulkExportBtn">
+                        <i class="fas fa-download"></i> خروجی رکوردهای انتخاب شده
+                    </button>
+                    <button class="btn btn-info" id="bulkEditBtn">
+                        <i class="fas fa-edit"></i> ویرایش گروهی
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    // Event Listeners
+    document.getElementById('bulkDeleteBtn').addEventListener('click', () => {
+        this.bulkDeleteRecords();
+        modal.style.display = 'none';
+    });
+    
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+// حذف گروهی رکوردها
+bulkDeleteRecords() {
+    const selectedDates = Array.from(document.querySelectorAll('.archive-record-checkbox:checked'))
+        .map(checkbox => checkbox.dataset.date);
+    
+    const uniqueDates = [...new Set(selectedDates)];
+    
+    if (confirm(`آیا از حذف ${uniqueDates.length} روز انتخاب شده اطمینان دارید؟`)) {
+        uniqueDates.forEach(date => {
+            this.records = this.records.filter(record => record.date !== date);
+        });
+        
+        this.saveToStorage('attendanceRecords', this.records);
+        this.showNotification(`✅ ${uniqueDates.length} روز با موفقیت حذف شد`, 'success');
+        this.searchArchive();
+    }
+}
+
+
+createArchiveCleanupModal() {
+    // اگر از قبل وجود دارد، حذف کن
+    const existingModal = document.getElementById('archiveCleanupModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'archiveCleanupModal';
+    modal.style.zIndex = '10010';
+    
+    // تاریخ‌های پیشفرض
+    const currentJalali = this.getCurrentJalaliDate();
+    const defaultStartDate = `${currentJalali.year-1}/${currentJalali.month.toString().padStart(2, '0')}/${currentJalali.day.toString().padStart(2, '0')}`;
+    const defaultEndDate = `${currentJalali.year}/${currentJalali.month.toString().padStart(2, '0')}/${currentJalali.day.toString().padStart(2, '0')}`;
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 10011;">
+            <div class="modal-header">
+                <h2 class="modal-title">🧹 پاکسازی پیشرفته آرشیو</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🗑️</div>
+                    <h3 style="color: var(--primary);">پاکسازی انتخابی داده‌ها</h3>
+                </div>
+                
+                <!-- انتخاب نوع پاکسازی -->
+                <div class="form-group">
+                    <label class="form-label">نوع پاکسازی</label>
+                    <select class="form-control" id="cleanupType">
+                        <option value="dateRange">بازه زمانی (تاریخ شمسی)</option>
+                        <option value="yearRange">بازه سالی</option>
+                        <option value="monthRange">بازه ماهی</option>
+                        <option value="olderThan">قدیمی‌تر از</option>
+                        <option value="all">همه داده‌ها</option>
+                    </select>
+                </div>
+                
+                <!-- بخش بازه زمانی -->
+                <div id="dateRangeSection" class="cleanup-section">
+                    <div class="form-group">
+                        <label class="form-label">بازه زمانی شمسی</label>
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
+                            <div>
+                                <label style="font-size: 12px; margin-bottom: 5px; display: block;">از تاریخ:</label>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="number" class="form-control" id="startYear" placeholder="سال" min="1400" max="1500" value="${currentJalali.year-1}">
+                                    <select class="form-control" id="startMonth">
+                                        ${Array.from({length: 12}, (_, i) => 
+                                            `<option value="${i+1}" ${i+1 === currentJalali.month ? 'selected' : ''}>${this.getJalaliMonthName(i+1)}</option>`
+                                        ).join('')}
+                                    </select>
+                                    <select class="form-control" id="startDay">
+                                        ${Array.from({length: 31}, (_, i) => 
+                                            `<option value="${i+1}" ${i+1 === currentJalali.day ? 'selected' : ''}>${i+1}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="text-align: center; padding-top: 15px;">تا</div>
+                            <div>
+                                <label style="font-size: 12px; margin-bottom: 5px; display: block;">تا تاریخ:</label>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="number" class="form-control" id="endYear" placeholder="سال" min="1400" max="1500" value="${currentJalali.year}">
+                                    <select class="form-control" id="endMonth">
+                                        ${Array.from({length: 12}, (_, i) => 
+                                            `<option value="${i+1}" ${i+1 === currentJalali.month ? 'selected' : ''}>${this.getJalaliMonthName(i+1)}</option>`
+                                        ).join('')}
+                                    </select>
+                                    <select class="form-control" id="endDay">
+                                        ${Array.from({length: 31}, (_, i) => 
+                                            `<option value="${i+1}" ${i+1 === currentJalali.day ? 'selected' : ''}>${i+1}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- بخش بازه سالی -->
+                <div id="yearRangeSection" class="cleanup-section" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">بازه سالی شمسی</label>
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
+                            <select class="form-control" id="startYearRange">
+                                ${Array.from({length: 10}, (_, i) => {
+                                    const year = currentJalali.year - i;
+                                    return `<option value="${year}" ${i === 1 ? 'selected' : ''}>${year}</option>`;
+                                }).join('')}
+                            </select>
+                            <div style="text-align: center;">تا</div>
+                            <select class="form-control" id="endYearRange">
+                                ${Array.from({length: 10}, (_, i) => {
+                                    const year = currentJalali.year - i;
+                                    return `<option value="${year}" ${i === 0 ? 'selected' : ''}>${year}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- بخش بازه ماهی -->
+                <div id="monthRangeSection" class="cleanup-section" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">بازه ماهی</label>
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
+                            <select class="form-control" id="startMonthRange">
+                                ${Array.from({length: 12}, (_, i) => 
+                                    `<option value="${i+1}">${this.getJalaliMonthName(i+1)}</option>`
+                                ).join('')}
+                            </select>
+                            <div style="text-align: center;">تا</div>
+                            <select class="form-control" id="endMonthRange">
+                                ${Array.from({length: 12}, (_, i) => 
+                                    `<option value="${i+1}">${this.getJalaliMonthName(i+1)}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">سال</label>
+                        <select class="form-control" id="monthRangeYear">
+                            ${Array.from({length: 5}, (_, i) => {
+                                const year = currentJalali.year - i;
+                                return `<option value="${year}" ${i === 0 ? 'selected' : ''}>${year}</option>`;
+                            }).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- بخش قدیمی‌تر از -->
+                <div id="olderThanSection" class="cleanup-section" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">حذف داده‌های قدیمی‌تر از</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="number" class="form-control" id="olderThanValue" value="6" min="1" max="36">
+                            <select class="form-control" id="olderThanUnit">
+                                <option value="months">ماه</option>
+                                <option value="years">سال</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- پیش‌نمایش نتایج -->
+                <div id="cleanupPreview" style="background: var(--background); padding: 15px; border-radius: var(--radius); margin: 15px 0; display: none;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">📊 پیش‌نمایش پاکسازی</h4>
+                    <div id="cleanupPreviewContent">
+                        در حال محاسبه...
+                    </div>
+                </div>
+
+                <!-- گزینه‌های پیشرفته -->
+                <div class="form-group">
+                    <label class="form-label">گزینه‌های پیشرفته</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label class="form-label">
+                            <input type="checkbox" id="backupBeforeCleanup" checked>
+                            🔄 ایجاد پشتیبان قبل از پاکسازی
+                        </label>
+                        <label class="form-label">
+                            <input type="checkbox" id="notifyAfterCleanup" checked>
+                            🔔 اطلاع‌رسانی پس از پاکسازی
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="action-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-secondary" id="previewCleanupBtn">
+                        <i class="fas fa-eye"></i> پیش‌نمایش
+                    </button>
+                    <button class="btn btn-danger" id="confirmAdvancedCleanup">
+                        <i class="fas fa-broom"></i> اجرای پاکسازی
+                    </button>
+                    <button class="btn btn-outline" id="cancelAdvancedCleanup">
+                        انصراف
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    // Event Listeners
+    this.setupAdvancedCleanupEventListeners(modal);
+}
+
+// راه‌اندازی event listeners برای پاکسازی پیشرفته
+setupAdvancedCleanupEventListeners(modal) {
+    // تغییر نوع پاکسازی
+    document.getElementById('cleanupType').addEventListener('change', (e) => {
+        this.handleCleanupTypeChange(e.target.value);
+    });
+    
+    // پیش‌نمایش
+    document.getElementById('previewCleanupBtn').addEventListener('click', () => {
+        this.previewCleanup();
+    });
+    
+    // اجرای پاکسازی
+    document.getElementById('confirmAdvancedCleanup').addEventListener('click', () => {
+        this.performAdvancedCleanup();
+    });
+    
+    // انصراف
+    document.getElementById('cancelAdvancedCleanup').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    // بستن مودال
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // تغییرات در فیلدها برای به‌روزرسانی خودکار پیش‌نمایش
+    const previewFields = [
+        'cleanupType', 'startYear', 'startMonth', 'startDay', 'endYear', 'endMonth', 'endDay',
+        'startYearRange', 'endYearRange', 'startMonthRange', 'endMonthRange', 'monthRangeYear',
+        'olderThanValue', 'olderThanUnit'
+    ];
+    
+    previewFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            element.addEventListener('change', () => {
+                // پیش‌نمایش خودکار پس از 1 ثانیه
+                clearTimeout(this.cleanupPreviewTimeout);
+                this.cleanupPreviewTimeout = setTimeout(() => {
+                    this.previewCleanup();
+                }, 1000);
+            });
+        }
+    });
+}
+
+// مدیریت تغییر نوع پاکسازی
+handleCleanupTypeChange(cleanupType) {
+    // مخفی کردن همه بخش‌ها
+    document.querySelectorAll('.cleanup-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // نمایش بخش مربوطه
+    switch (cleanupType) {
+        case 'dateRange':
+            document.getElementById('dateRangeSection').style.display = 'block';
+            break;
+        case 'yearRange':
+            document.getElementById('yearRangeSection').style.display = 'block';
+            break;
+        case 'monthRange':
+            document.getElementById('monthRangeSection').style.display = 'block';
+            break;
+        case 'olderThan':
+            document.getElementById('olderThanSection').style.display = 'block';
+            break;
+    }
+    
+    // مخفی کردن پیش‌نمایش
+    document.getElementById('cleanupPreview').style.display = 'none';
+}
+
+// پیش‌نمایش پاکسازی
+previewCleanup() {
+    try {
+        const cleanupType = document.getElementById('cleanupType').value;
+        const recordsToDelete = this.calculateRecordsToDelete(cleanupType);
+        
+        if (recordsToDelete.length === 0) {
+            document.getElementById('cleanupPreviewContent').innerHTML = `
+                <div style="text-align: center; color: var(--text-light); padding: 20px;">
+                    <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                    هیچ داده‌ای برای پاکسازی پیدا نشد
+                </div>
+            `;
+        } else {
+            const totalSize = (JSON.stringify(recordsToDelete).length / 1024 / 1024).toFixed(2);
+            const affectedDates = [...new Set(recordsToDelete.map(r => r.date))].length;
+            
+            document.getElementById('cleanupPreviewContent').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: var(--danger);">${recordsToDelete.length}</div>
+                        <div style="font-size: 12px; color: var(--text-light);">تعداد رکوردها</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: var(--warning);">${affectedDates}</div>
+                        <div style="font-size: 12px; color: var(--text-light);">تعداد روزها</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: var(--info);">${totalSize} MB</div>
+                        <div style="font-size: 12px; color: var(--text-light);">حجم داده</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: var(--success);">${this.records.length - recordsToDelete.length}</div>
+                        <div style="font-size: 12px; color: var(--text-light);">باقی‌مانده</div>
+                    </div>
+                </div>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 4px; border-right: 3px solid #ffc107;">
+                    <small style="color: #856404;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        پس از پاکسازی، ${this.records.length - recordsToDelete.length} رکورد باقی خواهد ماند
+                    </small>
+                </div>
+            `;
+        }
+        
+        document.getElementById('cleanupPreview').style.display = 'block';
+        
+    } catch (error) {
+        console.error('خطا در پیش‌نمایش پاکسازی:', error);
+        document.getElementById('cleanupPreviewContent').innerHTML = `
+            <div style="color: var(--danger); text-align: center;">
+                <i class="fas fa-exclamation-circle"></i>
+                خطا در محاسبه پیش‌نمایش
+            </div>
+        `;
+        document.getElementById('cleanupPreview').style.display = 'block';
+    }
+}
+
+// محاسبه رکوردهای قابل پاکسازی
+calculateRecordsToDelete(cleanupType) {
+    switch (cleanupType) {
+        case 'dateRange':
+            return this.getRecordsByDateRange();
+        case 'yearRange':
+            return this.getRecordsByYearRange();
+        case 'monthRange':
+            return this.getRecordsByMonthRange();
+        case 'olderThan':
+            return this.getRecordsOlderThan();
+        case 'all':
+            return [...this.records];
+        default:
+            return [];
+    }
+}
+
+// دریافت رکوردها بر اساس بازه زمانی
+getRecordsByDateRange() {
+    const startYear = parseInt(document.getElementById('startYear').value);
+    const startMonth = parseInt(document.getElementById('startMonth').value);
+    const startDay = parseInt(document.getElementById('startDay').value);
+    const endYear = parseInt(document.getElementById('endYear').value);
+    const endMonth = parseInt(document.getElementById('endMonth').value);
+    const endDay = parseInt(document.getElementById('endDay').value);
+    
+    const startDate = `${startYear}/${startMonth.toString().padStart(2, '0')}/${startDay.toString().padStart(2, '0')}`;
+    const endDate = `${endYear}/${endMonth.toString().padStart(2, '0')}/${endDay.toString().padStart(2, '0')}`;
+    
+    return this.records.filter(record => {
+        const jalaliDate = toJalaliDate(record.date);
+        return this.isJalaliDateInRange(jalaliDate, startDate, endDate);
+    });
+}
+
+// دریافت رکوردها بر اساس بازه سالی
+getRecordsByYearRange() {
+    const startYear = parseInt(document.getElementById('startYearRange').value);
+    const endYear = parseInt(document.getElementById('endYearRange').value);
+    
+    return this.records.filter(record => {
+        const jalaliDate = toJalaliDate(record.date);
+        const recordYear = parseInt(jalaliDate.split('/')[0]);
+        return recordYear >= startYear && recordYear <= endYear;
+    });
+}
+
+// دریافت رکوردها بر اساس بازه ماهی
+getRecordsByMonthRange() {
+    const startMonth = parseInt(document.getElementById('startMonthRange').value);
+    const endMonth = parseInt(document.getElementById('endMonthRange').value);
+    const year = parseInt(document.getElementById('monthRangeYear').value);
+    
+    return this.records.filter(record => {
+        const jalaliDate = toJalaliDate(record.date);
+        const [recordYear, recordMonth] = jalaliDate.split('/').map(Number);
+        return recordYear === year && recordMonth >= startMonth && recordMonth <= endMonth;
+    });
+}
+
+// دریافت رکوردهای قدیمی
+getRecordsOlderThan() {
+    const value = parseInt(document.getElementById('olderThanValue').value);
+    const unit = document.getElementById('olderThanUnit').value;
+    
+    const cutoffDate = new Date();
+    if (unit === 'months') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - value);
+    } else {
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - value);
+    }
+    
+    return this.records.filter(record => {
+        const recordDate = new Date(record.date);
+        return recordDate < cutoffDate;
+    });
+}
+
+// اجرای پاکسازی پیشرفته
+async performAdvancedCleanup() {
+    try {
+        const cleanupType = document.getElementById('cleanupType').value;
+        const recordsToDelete = this.calculateRecordsToDelete(cleanupType);
+        const backupBeforeCleanup = document.getElementById('backupBeforeCleanup').checked;
+        
+        if (recordsToDelete.length === 0) {
+            this.showNotification('⚠️ هیچ داده‌ای برای پاکسازی پیدا نشد', 'warning');
+            return;
+        }
+
+        // تأیید نهایی
+        const confirmMessage = `آیا از پاکسازی ${recordsToDelete.length} رکورد اطمینان دارید؟\n\n` +
+                             `این عمل غیرقابل بازگشت است.`;
+        
+        if (!confirm(confirmMessage)) {
+            this.showNotification('پاکسازی لغو شد', 'info');
+            return;
+        }
+
+        // ایجاد پشتیبان اگر درخواست شده
+        if (backupBeforeCleanup) {
+            this.createManualBackup();
+        }
+
+        // اجرای پاکسازی
+        this.records = this.records.filter(record => !recordsToDelete.includes(record));
+        this.saveToStorage('attendanceRecords', this.records);
+        
+        // بستن مودال
+        document.getElementById('archiveCleanupModal').style.display = 'none';
+        
+        // نمایش نتایج
+        const notifyAfterCleanup = document.getElementById('notifyAfterCleanup').checked;
+        if (notifyAfterCleanup) {
+            this.showNotification(`✅ ${recordsToDelete.length} رکورد با موفقیت پاک شد`, 'success');
+        }
+        
+        // به‌روزرسانی نمایش
+        setTimeout(() => {
+            this.loadTodayRecords();
+            this.updateStats();
+            this.loadMonthlyReport();
+            this.loadYearlyReport();
+            
+            // به‌روزرسانی آرشیو اگر باز است
+            if (document.getElementById('archiveTableBody')) {
+                this.searchArchive();
+            }
+        }, 500);
+        
+    } catch (error) {
+        console.error('❌ خطا در اجرای پاکسازی:', error);
+        this.showNotification('❌ خطا در اجرای پاکسازی', 'error');
+    }
+}
+
+// اجرای پاکسازی آرشیو
+performArchiveCleanup() {
+    const cleanupType = document.querySelector('input[name="cleanupType"]:checked').value;
+    
+    if (cleanupType === 'all') {
+        if (confirm('⚠️ آیا از حذف تمام رکوردهای آرشیو اطمینان دارید؟ این عمل غیرقابل بازگشت است!')) {
+            const recordCount = this.records.length;
+            this.records = [];
+            this.saveToStorage('attendanceRecords', this.records);
+            this.showNotification(`✅ ${recordCount} رکورد حذف شد`, 'success');
+            this.searchArchive();
+        }
+    } else {
+        const months = parseInt(document.getElementById('cleanupMonths').value);
+        const cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - months);
+        
+        const oldRecords = this.records.filter(record => {
+            const recordDate = new Date(record.date);
+            return recordDate < cutoffDate;
+        });
+        
+        if (oldRecords.length === 0) {
+            this.showNotification('⚠️ هیچ رکورد قدیمی پیدا نشد', 'warning');
+            return;
+        }
+        
+        if (confirm(`آیا از حذف ${oldRecords.length} رکورد قدیمی‌تر از ${months} ماه اطمینان دارید؟`)) {
+            this.records = this.records.filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate >= cutoffDate;
+            });
+            
+            this.saveToStorage('attendanceRecords', this.records);
+            this.showNotification(`✅ ${oldRecords.length} رکورد قدیمی حذف شد`, 'success');
+            this.searchArchive();
+        }
+    }
+}
+
+// مودال مشاهده جزئیات روز
+openDayDetailsModal(date, records) {
+    const jalaliDate = toJalaliDate(date);
+    const dayData = this.calculateDayData(records, date);
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'dayDetailsModal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">📊 جزئیات روز ${jalaliDate}</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <!-- آمار روز -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-value">${dayData.totalHours.toFixed(2)}</div>
+                        <div class="stat-label">ساعات کار</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${dayData.overtimeHours.toFixed(2)}</div>
+                        <div class="stat-label">اضافه کاری</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${this.formatCurrency(dayData.dailyIncome)}</div>
+                        <div class="stat-label">درآمد روز</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${records.length}</div>
+                        <div class="stat-label">تعداد ثبت‌ها</div>
+                    </div>
+                </div>
+                
+                <!-- لیست رکوردها -->
+                <h4>📝 لیست ثبت‌ها:</h4>
+                <div class="table-container" style="max-height: 300px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ردیف</th>
+                                <th>نوع</th>
+                                <th>ساعت</th>
+                                <th>دستگاه</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${records.map((record, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <span class="badge ${record.type === 'in' ? 'badge-success' : 'badge-warning'}">
+                                            ${record.type === 'in' ? 'ورود' : 'خروج'}
+                                        </span>
+                                    </td>
+                                    <td>${this.formatTime(record.time)}</td>
+                                    <td>${record.manual ? '📝 دستی' : '📱 اتوماتیک'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+// تابع باز کردن مودال ویرایش روز - نسخه اصلاح شده
+openEditDayModal(date, records) {
+    try {
+        const jalaliDate = toJalaliDate(date);
+        
+        // اگر مودال از قبل وجود دارد، حذف کن
+        const existingModal = document.getElementById('editDayModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'editDayModal';
+        modal.style.zIndex = '10010';
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; z-index: 10011;">
+                <div class="modal-header">
+                    <h2 class="modal-title">✏️ ویرایش روز ${jalaliDate}</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <p>${records.length} رکورد برای این تاریخ وجود دارد.</p>
+                    
+                    <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ردیف</th>
+                                    <th>نوع</th>
+                                    <th>ساعت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editDayRecordsBody">
+                                ${records.map((record, index) => {
+                                    // اصلاح فرمت زمان - تبدیل به فرمت مناسب برای input type="time"
+                                    const timeParts = record.time.split(':');
+                                    let timeValue = record.time;
+                                    
+                                    // اگر زمان دارای بخش میلی‌ثانیه است، آن را حذف کن
+                                    if (timeParts.length > 3) {
+                                        timeValue = timeParts.slice(0, 3).join(':');
+                                    }
+                                    
+                                    // اطمینان از فرمت HH:mm:ss
+                                    if (timeParts.length === 2) {
+                                        timeValue = record.time + ':00';
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>
+                                                <select class="form-control record-type" data-id="${record.id}">
+                                                    <option value="in" ${record.type === 'in' ? 'selected' : ''}>ورود</option>
+                                                    <option value="out" ${record.type === 'out' ? 'selected' : ''}>خروج</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="time" class="form-control record-time" 
+                                                       data-id="${record.id}" value="${timeValue}" step="1">
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-danger delete-single-record" data-id="${record.id}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="action-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-success" id="addRecordToDay">
+                            <i class="fas fa-plus"></i> افزودن رکورد جدید
+                        </button>
+                        <button class="btn btn-primary" id="saveDayChanges">
+                            <i class="fas fa-save"></i> ذخیره تغییرات
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        
+        // Event Listeners
+        document.getElementById('saveDayChanges').addEventListener('click', () => {
+            this.saveDayChanges(date, records);
+            modal.style.display = 'none';
+        });
+        
+        document.getElementById('addRecordToDay').addEventListener('click', () => {
+            this.addRecordToDay(date, modal);
+        });
+        
+        // Event Listeners برای حذف رکوردهای تکی
+        modal.querySelectorAll('.delete-single-record').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const recordId = parseInt(e.target.closest('button').dataset.id);
+                this.deleteSingleRecord(recordId, date, modal);
+            });
+        });
+        
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ خطا در ایجاد مودال ویرایش روز:', error);
+        this.showNotification('❌ خطا در باز کردن ویرایشگر', 'error');
+    }
+}
+
+// تابع جدید: افزودن رکورد جدید به روز
+addRecordToDay(date, modal) {
+    try {
+        const tbody = document.getElementById('editDayRecordsBody');
+        const newRecordId = Date.now();
+        
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${tbody.children.length + 1}</td>
+            <td>
+                <select class="form-control record-type" data-id="${newRecordId}">
+                    <option value="in">ورود</option>
+                    <option value="out">خروج</option>
+                </select>
+            </td>
+            <td>
+                <input type="time" class="form-control record-time" 
+                       data-id="${newRecordId}" value="08:00:00" step="1">
+            </td>
+            <td>
+                <button class="btn btn-sm btn-danger delete-single-record" data-id="${newRecordId}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(newRow);
+        
+        // اضافه کردن event listener برای دکمه حذف جدید
+        newRow.querySelector('.delete-single-record').addEventListener('click', (e) => {
+            const recordId = parseInt(e.target.closest('button').dataset.id);
+            this.deleteSingleRecord(recordId, date, modal);
+        });
+        
+        this.showNotification('✅ رکورد جدید اضافه شد', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطا در افزودن رکورد جدید:', error);
+        this.showNotification('❌ خطا در افزودن رکورد', 'error');
+    }
+}
+
+// تابع جدید: حذف رکورد تکی
+deleteSingleRecord(recordId, date, modal) {
+    try {
+        // پیدا کردن رکورد در آرایه
+        const recordIndex = this.records.findIndex(record => record.id === recordId);
+        
+        if (recordIndex === -1) {
+            // اگر رکورد در آرایه اصلی نیست (رکورد جدید است)، فقط از DOM حذف کن
+            const row = document.querySelector(`[data-id="${recordId}"]`)?.closest('tr');
+            if (row) {
+                row.remove();
+                this.updateRowNumbers(modal);
+            }
+            return;
+        }
+
+        const record = this.records[recordIndex];
+        const recordTime = this.formatTime(record.time);
+        
+        if (confirm(`آیا از حذف رکورد ${record.type === 'in' ? 'ورود' : 'خروج'} ساعت ${recordTime} اطمینان دارید؟`)) {
+            // حذف از آرایه اصلی
+            this.records.splice(recordIndex, 1);
+            
+            // حذف از DOM
+            const row = document.querySelector(`[data-id="${recordId}"]`)?.closest('tr');
+            if (row) {
+                row.remove();
+                this.updateRowNumbers(modal);
+            }
+            
+            this.showNotification('✅ رکورد با موفقیت حذف شد', 'success');
+        }
+        
+    } catch (error) {
+        console.error('❌ خطا در حذف رکورد:', error);
+        this.showNotification('❌ خطا در حذف رکورد', 'error');
+    }
+}
+
+// تابع جدید: به‌روزرسانی شماره ردیف‌ها
+updateRowNumbers(modal) {
+    const rows = modal.querySelectorAll('#editDayRecordsBody tr');
+    rows.forEach((row, index) => {
+        row.cells[0].textContent = index + 1;
+    });
+}
+
+// تابع ذخیره تغییرات روز - نسخه کاملاً اصلاح شده
+saveDayChanges(date, originalRecords) {
+    try {
+        console.log('💾 شروع ذخیره تغییرات روز...');
+        
+        const recordsToUpdate = [];
+        const recordsToAdd = [];
+        let hasChanges = false;
+
+        // جمع‌آوری تمام رکوردهای موجود در جدول
+        document.querySelectorAll('#editDayRecordsBody tr').forEach(row => {
+            const typeSelect = row.querySelector('.record-type');
+            const timeInput = row.querySelector('.record-time');
+            const recordId = parseInt(typeSelect.dataset.id);
+            
+            if (typeSelect && timeInput) {
+                const newType = typeSelect.value;
+                let newTime = timeInput.value;
+                
+                // اطمینان از فرمت صحیح زمان
+                if (newTime) {
+                    const timeParts = newTime.split(':');
+                    if (timeParts.length === 2) {
+                        newTime += ':00'; // اضافه کردن ثانیه اگر وجود ندارد
+                    }
+                }
+                
+                // بررسی اینکه آیا رکورد جدید است یا موجود
+                const existingRecordIndex = this.records.findIndex(record => record.id === recordId);
+                
+                if (existingRecordIndex !== -1) {
+                    // رکورد موجود
+                    const existingRecord = this.records[existingRecordIndex];
+                    
+                    if (newType !== existingRecord.type || newTime !== existingRecord.time) {
+                        existingRecord.type = newType;
+                        existingRecord.time = newTime;
+                        existingRecord.timestamp = new Date(`${date}T${newTime}`).getTime();
+                        hasChanges = true;
+                        console.log(`🔄 رکورد موجود به‌روزرسانی شد: ${recordId}`);
+                    }
+                } else {
+                    // رکورد جدید
+                    const newRecord = {
+                        id: recordId,
+                        type: newType,
+                        time: newTime,
+                        date: date,
+                        timestamp: new Date(`${date}T${newTime}`).getTime(),
+                        manual: true
+                    };
+                    recordsToAdd.push(newRecord);
+                    hasChanges = true;
+                    console.log(`🆕 رکورد جدید اضافه شد: ${recordId}`);
+                }
+            }
+        });
+
+        // اضافه کردن رکوردهای جدید به آرایه اصلی
+        if (recordsToAdd.length > 0) {
+            this.records.push(...recordsToAdd);
+        }
+
+        if (hasChanges || recordsToAdd.length > 0) {
+            // مرتب‌سازی رکوردها بر اساس timestamp
+            this.records.sort((a, b) => a.timestamp - b.timestamp);
+            
+            // ذخیره تغییرات
+            this.saveToStorage('attendanceRecords', this.records);
+            this.showNotification('✅ تغییرات با موفقیت ذخیره شد', 'success');
+            
+            // به‌روزرسانی نمایش‌ها
+            setTimeout(() => {
+                this.loadTodayRecords();
+                this.updateStats();
+                this.loadMonthlyReport();
+                this.loadYearlyReport();
+                
+                // اگر در آرشیو هستیم، آن را هم به‌روزرسانی کن
+                if (document.getElementById('archiveTableBody')) {
+                    this.searchArchive();
+                }
+            }, 500);
+            
+        } else {
+            this.showNotification('⚠️ هیچ تغییری اعمال نشده است', 'info');
+        }
+
+    } catch (error) {
+        console.error('❌ خطا در ذخیره تغییرات:', error);
+        this.showNotification('❌ خطا در ذخیره تغییرات', 'error');
+    }
+}
+
+// ذخیره تغییرات ویرایش روز
+saveDayChanges(date) {
+    try {
+        const recordsToUpdate = this.records.filter(record => record.date === date);
+        let hasChanges = false;
+
+        // بروزرسانی رکوردهای موجود
+        recordsToUpdate.forEach(record => {
+            const typeSelect = document.querySelector(`.record-type[data-id="${record.id}"]`);
+            const timeInput = document.querySelector(`.record-time[data-id="${record.id}"]`);
+            
+            if (typeSelect && timeInput) {
+                const newType = typeSelect.value;
+                const newTime = timeInput.value + ':00'; // اضافه کردن ثانیه
+                
+                if (newType !== record.type || newTime !== record.time) {
+                    record.type = newType;
+                    record.time = newTime;
+                    record.timestamp = new Date(`${date}T${newTime}`).getTime();
+                    hasChanges = true;
+                }
+            }
+        });
+
+        if (hasChanges) {
+            this.saveToStorage('attendanceRecords', this.records);
+            this.showNotification('✅ تغییرات با موفقیت ذخیره شد', 'success');
+            this.searchArchive(); // بروزرسانی نمایش
+        } else {
+            this.showNotification('⚠️ هیچ تغییری اعمال نشده است', 'info');
+        }
+
+    } catch (error) {
+        console.error('خطا در ذخیره تغییرات:', error);
+        this.showNotification('❌ خطا در ذخیره تغییرات', 'error');
+    }
+}
+
+
 
 loadAutoCleanupTab(form) {
     form.innerHTML = `
@@ -10385,23 +12792,26 @@ showSettingsSaveAlert() {
 loadSettingsTab(tabName) {
     const form = document.getElementById('settingsForm');
     
-    switch (tabName) {
-        case 'main':
-            this.loadMainSettingsTab(form);
-            break;
-        case 'display':
-            this.loadDisplaySettingsTab(form);
-            break;
-        case 'backup':
-            this.loadBackupSettingsTab(form);
-            break;
-        case 'advanced':
-            this.loadAdvancedBackupTab(form);
-            break;
-        case 'smart':
-            this.loadSmartSystemTab(form);
-            break;
-    }
+        switch (tabName) {
+            case 'main':
+                this.loadMainSettingsTab(form);
+                break;
+            case 'display':
+                this.loadDisplaySettingsTab(form);
+                break;
+            case 'archive': // 🔥 تب جدید
+                this.loadArchiveTab(form);
+                break;
+            case 'backup':
+                this.loadBackupSettingsTab(form);
+                break;
+            case 'advanced':
+                this.loadAdvancedBackupTab(form);
+                break;
+            case 'smart':
+                this.loadSmartSystemTab(form);
+                break;
+        }
 }
 
 // اصلاح تابع loadMainSettingsTab - حذف بخش دسترسی سریع
@@ -12439,77 +14849,278 @@ async testFolderAccess() {
     }
 }
 
-            // باز کردن مودال آرشیو
-            openArchiveModal() {
+// جایگزین تابع openArchiveModal 
+openArchiveModal() {
+    try {
+        console.log('📂 باز کردن مودال آرشیو...');
+        
+        // ایجاد مودال اگر وجود ندارد
+        if (!document.getElementById('archiveModal')) {
+            this.createArchiveModal();
+        }
+        
+        const modal = document.getElementById('archiveModal');
+        
+        // نمایش مودال اول
+        modal.style.display = 'flex';
+        modal.style.zIndex = '10002';
+        
+        // پر کردن فیلترها با تاخیر و مدیریت خطا
+        setTimeout(() => {
+            try {
                 this.populateArchiveFilters();
-                this.loadArchiveData();
-                document.getElementById('archiveModal').style.display = 'flex';
+                
+                // بارگذاری داده‌ها پس از پر شدن فیلترها
+                setTimeout(() => {
+                    try {
+                        this.loadArchiveData();
+                        console.log('✅ داده‌های آرشیو بارگذاری شدند');
+                    } catch (loadError) {
+                        console.error('❌ خطا در بارگذاری داده‌های آرشیو:', loadError);
+                        this.showNotification('❌ خطا در بارگذاری داده‌های آرشیو', 'error');
+                    }
+                }, 200);
+                
+            } catch (filterError) {
+                console.error('❌ خطا در پر کردن فیلترهای آرشیو:', filterError);
+                this.showNotification('❌ خطا در تنظیم فیلترهای آرشیو', 'error');
+                
+                // تلاش مجدد
+                setTimeout(() => {
+                    this.populateArchiveFilters();
+                }, 500);
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ خطا در باز کردن مودال آرشیو:', error);
+        this.showNotification('❌ خطا در باز کردن آرشیو', 'error');
+    }
+}
+createArchiveModal() {
+    try {
+        console.log('🛠️ ایجاد مودال آرشیو...');
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'archiveModal';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 90%; width: 1000px;">
+                <div class="modal-header">
+                    <h2 class="modal-title">📊 آرشیو حضور و غیاب</h2>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <!-- فیلترها -->
+                    <div class="filter-section" style="margin-bottom: 20px;">
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                            <div class="form-group">
+                                <label class="form-label">ماه</label>
+                                <select class="form-control" id="archiveMonth"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">سال</label>
+                                <select class="form-control" id="archiveYear"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">روز</label>
+                                <select class="form-control" id="archiveDay"></select>
+                            </div>
+                            <button class="btn btn-primary" id="searchArchive">
+                                <i class="fas fa-search"></i> جستجو
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- جدول نتایج -->
+                    <div class="table-container" style="max-height: 500px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>تاریخ</th>
+                                    <th>اولین ورود</th>
+                                    <th>آخرین خروج</th>
+                                    <th>ساعات کار</th>
+                                    <th>اضافه کاری</th>
+                                    <th>درآمد روز</th>
+                                </tr>
+                            </thead>
+                            <tbody id="archiveTableBody">
+                                <!-- داده‌ها اینجا لود می‌شوند -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- دکمه خروجی -->
+                    <div class="action-buttons" style="margin-top: 20px;">
+                        <button class="btn btn-success" id="exportArchiveExcel">
+                            <i class="fas fa-file-excel"></i> خروجی Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Event Listeners
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        document.getElementById('searchArchive').addEventListener('click', () => {
+            this.loadArchiveData();
+        });
+        
+        document.getElementById('exportArchiveExcel').addEventListener('click', () => {
+            const month = parseInt(document.getElementById('archiveMonth').value);
+            const year = parseInt(document.getElementById('archiveYear').value);
+            this.exportArchiveToExcel(month, year);
+        });
+        
+        // بستن با کلیک خارج
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        console.log('✅ مودال آرشیو ایجاد شد');
+        
+    } catch (error) {
+        console.error('❌ خطا در ایجاد مودال آرشیو:', error);
+    }
+}
+
+// 🔧 جایگزین تابع populateArchiveFilters با این نسخه اصلاح شده
+populateArchiveFilters() {
+    try {
+        console.log('🔄 پر کردن فیلترهای آرشیو...');
+        
+        // کمی تاخیر برای اطمینان از لود کامل DOM
+        setTimeout(() => {
+            const monthSelect = document.getElementById('archiveMonth');
+            const yearSelect = document.getElementById('archiveYear');
+            const daySelect = document.getElementById('archiveDay');
+            
+            // 🔥 بررسی ایمن وجود المان‌ها
+            if (!monthSelect || !yearSelect || !daySelect) {
+                console.error('❌ المان‌های فیلتر آرشیو پیدا نشدند:', {
+                    month: !!monthSelect,
+                    year: !!yearSelect,
+                    day: !!daySelect
+                });
+                
+                // تلاش مجدد پس از تاخیر
+                setTimeout(() => this.populateArchiveFilters(), 500);
+                return;
             }
             
-// پر کردن فیلترهای آرشیو - نسخه اصلاح شده با سال شمسی
-populateArchiveFilters() {
-    const monthSelect = document.getElementById('archiveMonth');
-    const yearSelect = document.getElementById('archiveYear');
-    
-    // پاک کردن گزینه‌های قبلی
-    monthSelect.innerHTML = '';
-    yearSelect.innerHTML = '';
-    
-    // اضافه کردن گزینه‌های ماه شمسی
-    const months = [
-        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
-    ];
-    
-    months.forEach((month, index) => {
-        const option = document.createElement('option');
-        option.value = index + 1;
-        option.textContent = month;
-        monthSelect.appendChild(option);
-    });
-    
-    // پیدا کردن سال‌های موجود در داده‌ها (شمسی)
-    const years = new Set();
-    this.records.forEach(record => {
-        const jalaliDate = toJalaliDate(record.date).split('/');
-        years.add(parseInt(jalaliDate[0]));
-    });
-    
-    // اگر داده‌ای نداریم، سال جاری شمسی را اضافه کن
-    if (years.size === 0) {
-        const currentJalaliYear = this.getCurrentJalaliYear();
-        years.add(currentJalaliYear);
+            console.log('✅ المان‌های فیلتر پیدا شدند');
+            
+            // پاک کردن گزینه‌های قبلی
+            monthSelect.innerHTML = '';
+            yearSelect.innerHTML = '';
+            daySelect.innerHTML = '';
+            
+            // اضافه کردن گزینه "همه ماه‌ها"
+            const allMonthsOption = document.createElement('option');
+            allMonthsOption.value = '';
+            allMonthsOption.textContent = 'همه ماه‌ها';
+            monthSelect.appendChild(allMonthsOption);
+            
+            // اضافه کردن گزینه‌های ماه شمسی
+            const months = [
+                'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+                'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+            ];
+            
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index + 1;
+                option.textContent = month;
+                monthSelect.appendChild(option);
+            });
+            
+            // اضافه کردن گزینه "همه سال‌ها"
+            const allYearsOption = document.createElement('option');
+            allYearsOption.value = '';
+            allYearsOption.textContent = 'همه سال‌ها';
+            yearSelect.appendChild(allYearsOption);
+            
+            // پیدا کردن سال‌های موجود در داده‌ها (شمسی)
+            const years = new Set();
+            if (this.records && this.records.length > 0) {
+                this.records.forEach(record => {
+                    try {
+                        const jalaliDate = toJalaliDate(record.date).split('/');
+                        if (jalaliDate.length >= 3) {
+                            years.add(parseInt(jalaliDate[0]));
+                        }
+                    } catch (error) {
+                        console.warn('خطا در پردازش تاریخ رکورد:', record, error);
+                    }
+                });
+            }
+            
+            // اگر داده‌ای نداریم، سال جاری شمسی را اضافه کن
+            if (years.size === 0) {
+                const currentJalaliYear = this.getCurrentJalaliYear();
+                years.add(currentJalaliYear);
+            }
+            
+            // اضافه کردن گزینه‌های سال به صورت نزولی
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+            
+            // اضافه کردن گزینه "همه روزها"
+            const allDaysOption = document.createElement('option');
+            allDaysOption.value = '';
+            allDaysOption.textContent = 'همه روزها';
+            daySelect.appendChild(allDaysOption);
+            
+            // اضافه کردن روزها (۱ تا ۳۱)
+            for (let i = 1; i <= 31; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                daySelect.appendChild(option);
+            }
+            
+            // تنظیم مقادیر پیشفرض به ماه و سال شمسی جاری
+            const currentJalaliDate = this.getCurrentJalaliDate();
+            monthSelect.value = currentJalaliDate.month;
+            yearSelect.value = currentJalaliDate.year;
+            daySelect.value = '';
+            
+            console.log('✅ فیلترهای آرشیو با موفقیت پر شدند');
+            
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ خطا در پر کردن فیلترهای آرشیو:', error);
+        // تلاش مجدد پس از 1 ثانیه
+        setTimeout(() => this.populateArchiveFilters(), 1000);
     }
-    
-    // اضافه کردن گزینه‌های سال به صورت نزولی
-    const sortedYears = Array.from(years).sort((a, b) => b - a);
-    sortedYears.forEach(year => {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        yearSelect.appendChild(option);
-    });
-    
-    // تنظیم مقادیر پیشفرض به ماه و سال شمسی جاری
-    const currentJalaliDate = this.getCurrentJalaliDate();
-    monthSelect.value = currentJalaliDate.month;
-    yearSelect.value = currentJalaliDate.year;
-    
-    // اضافه کردن event listener برای تغییر فیلترها
-    monthSelect.addEventListener('change', () => {
-        this.loadArchiveData();
-    });
-    
-    yearSelect.addEventListener('change', () => {
-        this.loadArchiveData();
-    });
 }
+
 
 // تابع کمکی برای گرفتن سال شمسی جاری
 getCurrentJalaliYear() {
     const currentDate = new Date();
-    const jalaliDate = toJalaliDate(currentDate.toISOString().split('T')[0]).split('/');
-    return parseInt(jalaliDate[0]);
+    try {
+        const jalaliDate = toJalaliDate(currentDate.toISOString().split('T')[0]).split('/');
+        return parseInt(jalaliDate[0]);
+    } catch (error) {
+        // فال‌بک: محاسبه تقریبی سال شمسی
+        const gregorianYear = currentDate.getFullYear();
+        return gregorianYear - 621; // تبدیل تقریبی به شمسی
+    }
 }
 
 // تابع کمکی برای گرفتن تاریخ شمسی جاری
@@ -12792,7 +15403,10 @@ createConfirmClearAllModal() {
                     ❗ این عمل غیرقابل بازگشت است
                 </p>
                 <p style="color: var(--text-light); margin-bottom: 25px; line-height: 1.5;">
-                    تمامی رکوردهای حضور و غیاب پاک خواهند شد.
+                    تمامی رکوردهای ذخیره شده در حافظه موقت و جاری پاک خواهند شد.
+                </p>
+                <p style="color: var(--text-light); margin-bottom: 25px; line-height: 1.5;">
+                   اگر میخواهید فقط رکورد های آرشیو را پاک کنید از مدیریت آرشیو اقدام کنید.
                 </p>
                 <div class="action-buttons" style="gap: 10px;">
                     <button class="btn btn-secondary" id="confirmClearAllCancel" style="flex: 1;">
@@ -12825,17 +15439,34 @@ createConfirmClearAllModal() {
     });
 }
 
-
 // اجرای واقعی پاکسازی
 performClearAll() {
     try {
+        console.log('🧹 شروع پاکسازی کامل داده‌ها...');
         
-        // ریست متغیرها
+        // 1. پاک کردن تمام رکوردها
         this.records = [];
+        
+        // 2. پاک کردن تاریخچه پشتیبان‌ها
+        this.backupHistory = [];
+        localStorage.removeItem('backupHistory');
+        
+        // 3. پاک کردن روزهای کاری
         this.currentStatus = 'out';
         this.currentCheckInTime = null;
+
+
+        //4. پاک کردن لوکال
+        localStorage.removeItem('attendanceRecords');
+
+
+        // 5. پاکسازی sessionStorage
+        sessionStorage.clear();
+    
         
-        // نمایش نوتیفیکیشن زیبا
+        console.log('✅ پاکسازی کامل انجام شد');
+        
+        // نمایش نوتیفیکیشن
         this.showNotification('✅ تمام داده‌ها با موفقیت پاک شدند', 'success');
         
         // ریست کامل وضعیت برنامه
@@ -12844,10 +15475,70 @@ performClearAll() {
         }, 500);
         
     } catch (error) {
-        console.error('خطا در پاکسازی داده‌ها:', error);
+        console.error('❌ خطا در پاکسازی داده‌ها:', error);
         this.showNotification('❌ خطا در پاکسازی داده‌ها', 'error');
     }
+
 }
+
+// پاکسازی IndexedDB
+async clearIndexedDB() {
+    return new Promise((resolve, reject) => {
+        if (!this.db) {
+            resolve();
+            return;
+        }
+        
+        const transaction = this.db.transaction(
+            ['records', 'settings', 'backups'], 
+            'readwrite'
+        );
+        
+        const stores = ['records', 'settings', 'backups'];
+        let completed = 0;
+        
+        stores.forEach(storeName => {
+            const store = transaction.objectStore(storeName);
+            const clearRequest = store.clear();
+            
+            clearRequest.onsuccess = () => {
+                completed++;
+                if (completed === stores.length) {
+                    resolve();
+                }
+            };
+            
+            clearRequest.onerror = () => {
+                reject(clearRequest.error);
+            };
+        });
+    });
+}
+
+// اتصال Event Listeners برای آرشیو
+attachArchiveEventListeners() {
+    try {
+        // ویرایش روز
+        document.querySelectorAll('.edit-archive-record').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const date = e.target.closest('button').dataset.date;
+                this.editArchiveDay(date);
+            });
+        });
+        
+        // حذف روز
+        document.querySelectorAll('.delete-archive-day').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const date = e.target.closest('button').dataset.date;
+                this.deleteArchiveDay(date);
+            });
+        });
+        
+    } catch (error) {
+        console.error('خطا در اتصال Event Listeners آرشیو:', error);
+    }
+}
+
 
 
 // ریست وضعیت برنامه
@@ -13478,12 +16169,9 @@ function updateManifestWithDynamicIcon(iconDataUrl) {
 document.addEventListener('DOMContentLoaded', checkIconExists);
 </script>
 
+
 <footer>
     Created With <span class="heart">❤️</span> By Odiv V.<span id="appVersion"></span>
 </footer>
 </body>
 </html>
-
-
-
-
