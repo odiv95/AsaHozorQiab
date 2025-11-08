@@ -1,4 +1,5 @@
-const APP_VERSION = '1.7.14'; // ← فقط این عدد رو موقع آپدیت تغییر بده
+
+const APP_VERSION = '1.7.15'; // ← فقط این عدد رو موقع آپدیت تغییر بده
 
 function toPersianDigits(num) {
     return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
@@ -5357,24 +5358,28 @@ updateToggleButtonState(isVisible = null) {
     }
 }
 
-// به‌روزرسانی Badge اپلیکیشن
+// 🔹 نشان‌گذاری آیکن PWA با Badging API
 updateAppBadge(status) {
-    if (!('setAppBadge' in navigator)) return;
-
     try {
+        if (!('setAppBadge' in navigator) || !('clearAppBadge' in navigator)) {
+            console.log('🚫 Badging API پشتیبانی نمی‌شود');
+            return;
+        }
+
         if (status === 'in') {
-            // استفاده از علامت ! به جای عدد
-            navigator.setAppBadge('!').catch(() => {
-                // Fallback برای مرورگرهایی که از رشته پشتیبانی نمی‌کنند
-                navigator.setAppBadge(1);
-            });
+            // وقتی کاربر وارد شد، نشان فعال شود
+            navigator.setAppBadge();
+            console.log('🔴 نشان فعال شد (ورود)');
         } else {
+            // وقتی خارج شد، نشان حذف شود
             navigator.clearAppBadge();
+            console.log('⚪ نشان غیرفعال شد (خروج)');
         }
     } catch (error) {
-        console.log('خطا در به‌روزرسانی Badge:', error);
+        console.error('خطا در به‌روزرسانی نشان برنامه:', error);
     }
 }
+
 
 // روش جایگزین بهبود یافته
 fallbackBadgeUpdate(showBadge) {
@@ -8855,8 +8860,8 @@ updateArchiveStats(records) {
         document.getElementById('statsTotalHours').textContent = 
             totalHours > 0 ? this.toPersianDigits(totalHours.toFixed(1)) : '۰';
         
-        document.getElementById('statsTotalIncome').textContent = 
-            totalIncome > 0 ? this.toPersianDigits(Math.round(totalIncome).toLocaleString()) : '۰';
+document.getElementById('statsTotalIncome').textContent = 
+    totalIncome > 0 ? this.formatCurrency ? this.formatCurrency(totalIncome) : this.toPersianDigits(Math.round(totalIncome).toLocaleString()) : '۰';
         
     } catch (error) {
         console.error('خطا در به‌روزرسانی آمار آرشیو:', error);
@@ -12892,10 +12897,10 @@ performClearAll() {
         // نمایش نوتیفیکیشن
         this.showNotification('✅ تمام داده‌ها با موفقیت پاک شدند', 'success');
         
-        // ریست کامل وضعیت برنامه
-        setTimeout(() => {
-            this.resetApplicationState();
-        }, 500);
+
+
+        this.resetApplicationState();
+
         
     } catch (error) {
         console.error('❌ خطا در پاکسازی داده‌ها:', error);
@@ -12978,6 +12983,7 @@ resetApplicationState() {
     this.updateStats();
     this.loadMonthlyReport();
     this.loadYearlyReport();
+    
     
     console.log('✅ وضعیت برنامه با موفقیت ریست شد');
 }
@@ -13524,5 +13530,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
         const versionEl = document.getElementById('appVersion');
     if (versionEl) versionEl.textContent = APP_VERSION;
-
 });
