@@ -38,9 +38,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js?=v1.5"></script>
 <script src="main.js"></script>
 <style>
-
-        /* version: 1.5 */
-
         .theme-system {
     /* از متغیرهای اصلی root استفاده می‌کند */
 }
@@ -1156,6 +1153,11 @@ body.pwa-installed header {
 
         @media (max-width: 480px) {
 
+            .settings-tabs {
+
+            overflow-y: hidden;
+            }
+
             .settings-content{
                 text-align: center;
             }
@@ -1981,6 +1983,7 @@ li {
         justify-content: flex-start;
         align-items: center;
         text-align: center;
+        overflow-y: hidden;
     }
     
     .settings-tab {
@@ -2330,6 +2333,22 @@ input[type="time"]:focus {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+#checkInOutButton {
+  position: relative;
+}
+
+#checkInOutBadge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  background-color: red;
+  border-radius: 50%;
+  display: none;
+}
+
     </style>
 </head>
 <body>
