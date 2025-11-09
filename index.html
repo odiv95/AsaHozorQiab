@@ -2350,6 +2350,192 @@ input[type="time"]:focus {
   display: none;
 }
 
+#universalInstallPromotion{
+
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 20px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        z-index: 10010;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideUpInstall 0.5s ease-out;
+}
+.zarbdedar{
+
+    background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 5px;
+}
+
+.noshow{
+display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: rgba(255,255,255,0.8);
+}
+
+@media (max-width: 768px) {
+
+    #universalInstallPromotion{
+
+            flex-direction: column;
+            align-items: flex-start;
+    }
+    .zarbdedar{
+
+        position: relative;
+    bottom: 70px;
+    right: 170px;
+    }
+    .noshow{
+flex-direction: row;
+    position: relative;
+    width: 150px;
+    left: 50px;
+    top: 80px;
+
+    }
+}
+@media (max-width: 480px) {
+
+        .zarbdedar{
+
+        position: relative;
+    bottom: 70px;
+    right: 170px;
+    }
+
+        .noshow{
+flex-direction: row;
+    position: relative;
+    width: 150px;
+    left: 50px;
+    top: 80px;
+
+    }
+}
+
+/* در CSS برنامه این استایل را اضافه کنید */
+.absence-warning {
+    background-color: rgba(255, 152, 0, 0.1) !important;
+    border-right: 3px solid var(--warning) !important;
+}
+
+.absence-warning td {
+    color: var(--warning) !important;
+    font-weight: bold;
+}
+
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  /* استفاده از گرادیانت اصلی برنامه شما */
+  background: linear-gradient(135deg, #4361ee, #3a0ca3);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'AsaGity', tahoma, sans-serif;
+  direction: rtl;
+  
+  /* برای انیمیشن محو شدن */
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+}
+
+/* کلاس برای محو کردن */
+#splash-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.splash-logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 20px;
+  /* انیمیشن نبض برای لوگو */
+  animation: pulse 2.5s infinite ease-in-out;
+}
+
+.splash-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0 0 25px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* لودر خطی (Indeterminate Progress Bar)
+*/
+.splash-loader {
+  width: 220px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.splash-loader-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 80px; /* عرض بخش درخشان */
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.8), 
+    transparent
+  );
+  /* انیمیشن حرکت درخشش */
+  animation: shimmer 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.splash-footer {
+  position: absolute;
+  bottom: 30px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* انیمیشن‌های Keyframes
+*/
+@keyframes pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    /* شروع از خارج از کادر (چپ) */
+    transform: translateX(-100px); 
+  }
+  100% {
+    /* حرکت به خارج از کادر (راست) */
+    transform: translateX(320px); /* 220px عرض + 100px بافر */
+  }
+}
     </style>
 </head>
 <body>
@@ -2593,6 +2779,23 @@ input[type="time"]:focus {
         <span id="notificationText"></span>
         <button class="close-notification">&times;</button>
     </div>
+    <div id="splash-screen">
+    <div class="splash-content">
+        <img src="Images/LogoHozor256x256.png" alt="لوگو آساگیتی" class="splash-logo">
+        
+        <h1 class="splash-title">سامانه حضور و غیاب آساگیتی</h1>
+        
+        <div class="splash-loader">
+            <div class="splash-loader-shimmer"></div>
+        </div>
+        
+        <p class="splash-footer">
+            <span id="splash-version"></span>
+            <span> | </span>
+            <span>در حال بارگذاری اطلاعات...</span>
+        </p>
+    </div>
+</div>
     <script>
 // ایجاد آیکون داینامیک اگر فایل آیکون وجود ندارد
 function createDynamicIcon() {
