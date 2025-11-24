@@ -24,6 +24,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="Images/LogoHozor256.png">
 <link rel="apple-touch-icon" sizes="167x167" href="Images/LogoHozor256.png">
 <link rel="apple-touch-startup-image" href="Images/LogoHozor256.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <!-- تم رنگی -->
 <meta name="msapplication-TileColor" content="#4361ee">
 <meta name="msapplication-TileImage" content="Images/LogoHozor256.png">
@@ -1069,6 +1071,15 @@ body.pwa-installed header {
         .notification-error {
             background-color: var(--danger);
         }
+
+        .notification-warning {
+    background-color: var(--warning); /* نارنجی */
+    color: white;
+}
+
+.notification-info {
+    background-color: var(--info); /* آبی */
+}
 
         .close-notification {
             background: none;
@@ -2547,6 +2558,30 @@ position: sticky;
     font-weight: bold;
     margin-top: 20px;
 }
+/* استایل دکمه چشم */
+.privacy-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px; /* یا left بسته به سلیقه */
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    padding: 5px;
+}
+
+.privacy-toggle:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.main-card {
+    position: relative; /* برای اینکه دکمه نسبت به این کارت پوزیشن بگیرد */
+    /* بقیه استایل‌های قبلی main-card حفظ شود */
+}
 
     </style>
 </head>
@@ -2578,6 +2613,9 @@ position: sticky;
         </header>
 
 <div class="main-card">
+    <button class="privacy-toggle" id="privacyToggleBtn" title="مخفی‌سازی مبالغ">
+        <i class="fas fa-eye"></i>
+    </button>
     <div class="time-display" id="currentTime">--:--:--</div>
     <div class="date-display" id="currentDate">--- -- ----</div>
     
