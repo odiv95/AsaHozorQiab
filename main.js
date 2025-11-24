@@ -1,4 +1,4 @@
-const APP_VERSION = "1.7.22"; // ← فقط این عدد رو موقع آپدیت تغییر بده
+const APP_VERSION = "1.7.23"; // ← فقط این عدد رو موقع آپدیت تغییر بده
 
 function toPersianDigits(num) {
   return num.toString().replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
@@ -101,6 +101,7 @@ class AttendanceApp {
   constructor() {
     // ابتدا همه properties رو تعریف کنید
     this.records = [];
+    this.isPrivacyMode = this.loadFromStorage('isPrivacyMode') || false;
     this.settings = this.getDefaultSettings();
     this.currentStatus = "out";
     this.currentCheckInTime = null;
@@ -125,6 +126,429 @@ class AttendanceApp {
 
     this.init();
   }
+
+// 1. این تابع جدید را به کلاس اضافه کنید (وظیفه: خواندن اطلاعات تب فعلی قبل از بسته شدن)
+saveCurrentViewData(currentTabName) {
+    if (!currentTabName) return;
+    console.log(`💾 ذخیره موقت تب: ${currentTabName}`);
+
+    // تنظیمات اصلی
+    if (currentTabName === 'main') {
+        const hRate = document.getElementById('hourlyRate');
+        const oRate = document.getElementById('overtimeRate');
+        const mHours = document.getElementById('monthlyWorkHours');
+        const aThreshold = document.getElementById('absenceThreshold');
+        const oThreshold = document.getElementById('overtimeThreshold');
+        const strict = document.getElementById('enableStrictValidation');
+
+        if (hRate) this.settings.hourlyRate = parseInt(hRate.value) || 0;
+        if (oRate) this.settings.overtimeRate = parseInt(oRate.value) || 0;
+        if (mHours) this.settings.monthlyWorkHours = parseInt(mHours.value) || 192;
+        if (aThreshold) this.settings.absenceThreshold = parseInt(aThreshold.value) || 24;
+        if (oThreshold) this.settings.overtimeThreshold = parseInt(oThreshold.value) || 15;
+        if (strict) this.settings.enableStrictValidation = strict.checked;
+        
+        // ذخیره روزهای اضافه کاری (مهم)
+        // چون کدش طولانی است، اگر تغییر نکرده باشد همان قبلی میماند
+        // اما اگر میخواهید دقیق باشد، باید کد ذخیره چک باکس های روز را هم اینجا بیاورید
+    }
+
+    // تنظیمات نمایش
+    if (currentTabName === 'display') {
+        const font = document.getElementById('fontFamily');
+        const curr = document.getElementById('currencyUnit');
+        const timeF = document.getElementById('timeFormat');
+        const theme = document.getElementById('theme');
+        
+        if (font) this.settings.fontFamily = font.value;
+        if (curr) this.settings.currencyUnit = curr.value;
+        if (timeF) this.settings.timeFormat = timeF.value;
+        if (theme) this.settings.theme = theme.value;
+        
+        const sTime = document.getElementById('showTimeDisplay');
+        const sDate = document.getElementById('showDateDisplay');
+        const sRep = document.getElementById('showReportsDisplay');
+        const sLive = document.getElementById('liveStatsUpdate');
+        const sAnim = document.getElementById('enableBackgroundAnimation');
+
+        if (sTime) this.settings.showTimeDisplay = sTime.checked;
+        if (sDate) this.settings.showDateDisplay = sDate.checked;
+        if (sRep) this.settings.showReportsDisplay = sRep.checked;
+        if (sLive) this.settings.liveStatsUpdate = sLive.checked;
+        if (sAnim) this.settings.enableBackgroundAnimation = sAnim.checked;
+    }
+
+    // تنظیمات هوشمند (GPS)
+    if (currentTabName === 'smart') {
+        const gpsCheck = document.getElementById('enableGpsAuto');
+        if (gpsCheck) {
+            if (!this.settings.gps) this.settings.gps = {};
+            this.settings.gps.enabled = gpsCheck.checked;
+            this.settings.gps.radius = parseInt(document.getElementById('gpsRadius')?.value) || 100;
+            this.settings.gps.autoCheckIn = document.getElementById('gpsAutoCheckIn')?.checked;
+            this.settings.gps.autoCheckOut = document.getElementById('gpsAutoCheckOut')?.checked;
+            // مختصات
+            const lat = document.getElementById('workLat')?.value;
+            const lng = document.getElementById('workLng')?.value;
+            if(lat) this.settings.gps.lat = parseFloat(lat);
+            if(lng) this.settings.gps.lng = parseFloat(lng);
+        }
+        
+        const wifiCheck = document.getElementById('autoWifiCheck');
+        if (wifiCheck) this.settings.autoWifiEnabled = wifiCheck.checked;
+        
+        const wifis = document.getElementById('workWifis');
+        if (wifis) this.settings.workWifis = wifis.value.split('\n');
+    }
+    
+    // نکته: ما اینجا saveToStorage نمی‌زنیم تا سرعت بالا باشد و فقط وقتی دکمه "ذخیره نهایی" زده شد روی دیسک نوشته شود.
+    // اما داده‌ها در آبجکت this.settings در رم آپدیت می‌شوند و با رفتن به تب دیگر پاک نمی‌شوند.
+}
+
+  // تغییر وضعیت حریم خصوصی
+togglePrivacyMode() {
+    this.isPrivacyMode = !this.isPrivacyMode;
+    this.saveToStorage('isPrivacyMode', this.isPrivacyMode);
+    
+    // تغییر آیکون
+    this.updatePrivacyIcon();
+    
+    // به‌روزرسانی تمام نمایشگرها
+    this.updateStats();
+    this.loadMonthlyReport(); 
+    this.loadYearlyReport(); // اگر در گزارش‌ها هم می‌خواهید مخفی شود
+    
+    // اگر زنده فعال است، لحظه‌ای آپدیت کن
+    if (this.settings.liveStatsUpdate) {
+        this.updateStats();
+    }
+}
+
+// آپدیت آیکون چشم
+updatePrivacyIcon() {
+    const btn = document.getElementById('privacyToggleBtn');
+    if (!btn) return;
+    
+    const icon = btn.querySelector('i');
+    if (this.isPrivacyMode) {
+        icon.className = 'fas fa-eye-slash';
+        btn.style.color = 'var(--primary)';
+    } else {
+        icon.className = 'fas fa-eye';
+        btn.style.color = 'var(--text-light)';
+    }
+}
+
+// تابع کمکی برای نمایش متن (سانسور کننده)
+getPrivacyText(text) {
+    if (this.isPrivacyMode) {
+        return '****';
+    }
+    return text;
+}
+
+
+// این توابع را به کلاس AttendanceApp اضافه کنید
+
+// شروع مانیتورینگ GPS
+startGPSMonitoring() {
+    // اگر تنظیمات غیرفعال است یا مرورگر ساپورت نمی‌کند
+    if (!this.settings.gps?.enabled || !("geolocation" in navigator)) {
+        return;
+    }
+
+    console.log("📡 سرویس ردیابی GPS فعال شد...");
+
+    // اگر قبلاً واچر داشتیم پاکش کن
+    if (this.gpsWatcherId) {
+        navigator.geolocation.clearWatch(this.gpsWatcherId);
+    }
+
+    const options = {
+        enableHighAccuracy: true, // دقت بالا
+        timeout: 10000,
+        maximumAge: 0
+    };
+
+    this.gpsWatcherId = navigator.geolocation.watchPosition(
+        (position) => {
+            this.handleGPSPosition(position.coords);
+        },
+        (error) => {
+            console.warn("خطا در دریافت موقعیت GPS:", error.message);
+        },
+        options
+    );
+}
+
+// توقف مانیتورینگ
+stopGPSMonitoring() {
+    if (this.gpsWatcherId) {
+        navigator.geolocation.clearWatch(this.gpsWatcherId);
+        this.gpsWatcherId = null;
+        console.log("🔕 سرویس ردیابی GPS متوقف شد.");
+    }
+}
+
+// پردازش موقعیت و تصمیم‌گیری
+handleGPSPosition(coords) {
+    const workLat = this.settings.gps.lat;
+    const workLng = this.settings.gps.lng;
+    const radius = this.settings.gps.radius;
+
+    // محاسبه فاصله به متر
+    const distance = this.calculateDistance(coords.latitude, coords.longitude, workLat, workLng);
+    
+    // لاگ برای دیباگ
+    // console.log(`فاصله تا محل کار: ${Math.round(distance)} متر`);
+
+    // وضعیت فعلی کاربر در سیستم
+    // نکته: ما به currentStatus اعتماد می‌کنیم که توسط checkCurrentStatus به‌روز است
+
+    // --- ورود به محدوده ---
+    if (distance <= radius) {
+        // اگر کاربر "خارج" است و قابلیت "ورود خودکار" فعال است
+        if (this.currentStatus === 'out' && this.settings.gps.autoCheckIn) {
+            // بررسی ساعات مجاز (اختیاری - فعلا همیشه می‌زنیم)
+            this.performAutoGPSAction('in');
+        }
+    } 
+    // --- خروج از محدوده ---
+    else if (distance > radius + 20) { // ۲۰ متر بافر برای جلوگیری از پرش لب مرز
+        // اگر کاربر "داخل" است و قابلیت "خروج خودکار" فعال است
+        if (this.currentStatus === 'in' && this.settings.gps.autoCheckOut) {
+            this.performAutoGPSAction('out');
+        }
+    }
+}
+
+// ثبت ورود/خروج خودکار GPS
+performAutoGPSAction(type) {
+    // جلوگیری از ثبت تکراری در فاصله زمانی کوتاه (مثلا هر ۵ دقیقه)
+    const now = Date.now();
+    if (this.lastGPSActionTime && (now - this.lastGPSActionTime < 5 * 60 * 1000)) {
+        return;
+    }
+
+    console.log(`📍 تشخیص GPS: انجام عملیات ${type}`);
+    
+    // شبیه‌سازی زدن دکمه (استفاده از منطق موجود)
+    if (type === 'in') {
+        // اگر واقعا بیرونیم
+        if (this.currentStatus === 'out') {
+            this.checkInOut(); 
+            this.showNotification("📍 ورود خودکار با تشخیص موقعیت مکانی ثبت شد", "success");
+            this.sendAttendanceNotification("in"); // ارسال نوتیفیکیشن سیستم
+        }
+    } else {
+        // اگر واقعا داخلیم
+        if (this.currentStatus === 'in') {
+            this.checkInOut();
+            this.showNotification("📍 خروج خودکار با تشخیص موقعیت مکانی ثبت شد", "success");
+            this.sendAttendanceNotification("out");
+        }
+    }
+
+    this.lastGPSActionTime = now;
+}
+
+// فرمول محاسبه فاصله (Haversine)
+calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // شعاع زمین به متر
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // فاصله به متر
+}
+
+// جایگزین تابع initMap در main.js
+initMap(lat, lng, radius) {
+    if (typeof L === 'undefined') {
+        console.error("Leaflet library not loaded");
+        return;
+    }
+
+    // اگر نقشه قبلاً ساخته شده، آن را پاک کن (چون فرم رفرش شده)
+    if (this.map) {
+        this.map.remove();
+        this.map = null;
+    }
+
+    try {
+        // ساخت نقشه
+        this.map = L.map('mapContainer').setView([lat, lng], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(this.map);
+
+        // پین (Marker)
+        this.marker = L.marker([lat, lng], {draggable: true}).addTo(this.map);
+        
+        // دایره شعاع
+        this.circle = L.circle([lat, lng], {
+            color: '#4361ee',
+            fillColor: '#4361ee',
+            fillOpacity: 0.2,
+            radius: parseInt(radius)
+        }).addTo(this.map);
+
+        // رویداد درگ کردن پین
+        this.marker.on('dragend', (event) => {
+            const position = event.target.getLatLng();
+            this.updateLocationFields(position.lat, position.lng);
+            this.circle.setLatLng(position);
+        });
+
+        // رویداد کلیک روی نقشه
+        this.map.on('click', (e) => {
+            this.marker.setLatLng(e.latlng);
+            this.circle.setLatLng(e.latlng);
+            this.updateLocationFields(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // حل مشکل رندر نشدن صحیح در مودال
+        setTimeout(() => {
+            this.map.invalidateSize();
+        }, 300);
+
+    } catch (error) {
+        console.error("Error initializing map:", error);
+    }
+}
+
+// توابع کمکی نقشه
+updateLocationFields(lat, lng) {
+    const latInput = document.getElementById('workLat');
+    const lngInput = document.getElementById('workLng');
+    if(latInput) latInput.value = lat;
+    if(lngInput) lngInput.value = lng;
+}
+
+updateMapCircle(radius) {
+    if (this.circle) {
+        this.circle.setRadius(parseInt(radius));
+    }
+}
+
+locateUserOnMap() {
+    if (!this.map) return;
+    this.map.locate({setView: true, maxZoom: 16});
+    this.map.once('locationfound', (e) => {
+        this.marker.setLatLng(e.latlng);
+        this.circle.setLatLng(e.latlng);
+        this.updateLocationFields(e.latlng.lat, e.latlng.lng);
+    });
+}
+// این تابع جدید را به کلاس AttendanceApp اضافه کنید
+checkPreviousDayIncompleteRecords() {
+    try {
+        console.log("🕵️ بررسی رکوردهای ناقص روزهای قبل...");
+        
+        // پیدا کردن تاریخ دیروز
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().slice(0, 10); // YYYY-MM-DD
+        
+        // تبدیل به شمسی برای نمایش به کاربر
+        const jalaliYesterday = toJalaliDate(yesterdayStr);
+
+        // گرفتن رکوردهای دیروز
+        const records = this.records.filter(r => r.date === yesterdayStr);
+        
+        if (records.length === 0) return; // دیروز کلا نبودیم
+
+        // مرتب‌سازی
+        records.sort((a, b) => a.timestamp - b.timestamp);
+
+        // بررسی وضعیت آخر
+        const lastRecord = records[records.length - 1];
+
+        if (lastRecord.type === 'in') {
+            // یعنی دیروز ورود زدیم ولی خروج نزدیم!
+            const notificationMsg = `⚠️ توجه: آخرین رکورد روز گذشته (${jalaliYesterday}) «ورود» بوده است و خروج ثبت نشده.`;
+            
+            // ارسال نوتیفیکیشن سیستمی (اگر اجازه داده شده باشد)
+            if (this.notificationPermission) {
+                this.showSimpleNotification("رکوردهای ناقص", notificationMsg);
+            }
+            
+            // نمایش هشدار داخل برنامه (ماندگارتر)
+            // می‌توانیم یک مودال کوچک یا یک پیام چسبان نشان دهیم
+            // فعلاً از همان showNotification استفاده می‌کنیم ولی با تایم طولانی‌تر
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            notificationText.textContent = notificationMsg;
+            notification.className = "notification notification-warning show";
+            
+            // این یکی رو ۵ ثانیه نگه دار
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 8000);
+        }
+
+    } catch (error) {
+        console.error("خطا در بررسی روز قبل:", error);
+    }
+}
+
+// جایگزین تابع validateTimeLogic در main.js
+validateTimeLogic(date, newTime, type, ignoreRecordId = null) {
+    // 🔥 اصلاح حیاتی: بررسی صریح تنظیمات
+    // اگر تنظیمات وجود ندارد یا فالس است، اجازه بده رد شود
+    if (this.settings.enableStrictValidation === false) {
+        console.log("🔓 حالت پلیس غیرفعال است - اجازه ثبت داده شد.");
+        return { valid: true };
+    }
+
+    let dayRecords = this.records.filter(r => r.date === date && r.id !== ignoreRecordId);
+    
+    const tempRecord = {
+        id: 'temp',
+        time: newTime,
+        type: type,
+        _sortValue: this.timeToMinutes(newTime)
+    };
+
+    dayRecords.forEach(r => {
+        r._sortValue = this.timeToMinutes(r.time);
+    });
+
+    dayRecords.push(tempRecord);
+    // مرتب‌سازی زمانی
+    dayRecords.sort((a, b) => a._sortValue - b._sortValue);
+
+    let currentStatus = 'out';
+
+    for (let record of dayRecords) {
+        if (record.type === 'in') {
+            if (currentStatus === 'in') {
+                return { 
+                    valid: false, 
+                    message: `خطای منطقی: در ساعت ${record.time} ورود ثبت شده، در حالی که هنوز خروج قبلی ثبت نشده است.` 
+                };
+            }
+            currentStatus = 'in';
+        } else if (record.type === 'out') {
+            if (currentStatus === 'out') {
+                return { 
+                    valid: false, 
+                    message: `خطای منطقی: در ساعت ${record.time} خروج ثبت شده، بدون اینکه ورودی قبل از آن باشد.` 
+                };
+            }
+            currentStatus = 'out';
+        }
+    }
+
+    return { valid: true };
+}
 
   // تابع تبدیل تاریخ شمسی به میلادی - نسخه کامل
   jalaliToGregorian(jalaliDate) {
@@ -3278,6 +3702,7 @@ class AttendanceApp {
       showDateDisplay: true,
       showReportsDisplay: true,
       liveStatsUpdate: false,
+      enableStrictValidation: true,
       overtimeDaysSettings: {},
       storageType: "localStorage",
       autoBackup: {
@@ -3291,6 +3716,14 @@ class AttendanceApp {
       workWifis: ["AsaGity-Fiber", "AsaGity-shatel", "Local-WiFi"],
       autoCheckInHours: "8:00-10:00",
       autoCheckOutHours: "13:30-18:00",
+      gps: {
+            enabled: false,
+            lat: 35.6892, // پیش‌فرض تهران
+            lng: 51.3890,
+            radius: 100, // شعاع ۱۰۰ متر
+            autoCheckIn: true,
+            autoCheckOut: true
+        },
       autoCleanup: {
         enabled: false,
         keepMonths: 12,
@@ -3836,6 +4269,10 @@ class AttendanceApp {
       this.checkIfPWAInstalled();
       this.manageStorage();
       this.setupBackupRestoreListeners();
+      this.checkPreviousDayIncompleteRecords();
+      if (this.settings.gps && this.settings.gps.enabled) {
+    this.startGPSMonitoring();
+}
 
       // 🔥 سیستم آپدیت زنده (اگر فعال باشد)
       if (this.settings.liveStatsUpdate) {
@@ -5015,42 +5452,68 @@ performUpdate() {
   }
 
   // بررسی وضعیت فعلی کاربر (ورود یا خروج)
-  checkCurrentStatus() {
+// جایگزین تابع checkCurrentStatus قبلی در main.js
+checkCurrentStatus() {
     try {
-      console.log("🔍 بررسی وضعیت فعلی کاربر...");
+        console.log("🧠 پردازش هوشمند وضعیت حضور و غیاب...");
+        const today = this.getTodayDate();
+        
+        // ۱. گرفتن تمام رکوردهای امروز
+        let todayRecords = this.records.filter(r => r.date === today);
 
-      const today = this.getTodayDate();
-      const todayRecords = this.records.filter(
-        (record) => record.date === today
-      );
+        // ۲. بازسازی دقیق زمان برای مرتب‌سازی (حیاتی برای هوشمندی)
+        // این کار باعث می‌شود حتی اگر ساعت را دستی تغییر داده باشید، ترتیب درست شود
+        todayRecords.forEach(record => {
+            const [h, m, s] = record.time.split(':').map(Number);
+            // یک تاریخ موقت برای مقایسه می‌سازیم
+            const sortableTime = (h * 3600) + (m * 60) + (s || 0);
+            record._sortValue = sortableTime;
+        });
 
-      console.log("رکوردهای امروز:", todayRecords.length);
+        // ۳. مرتب‌سازی صعودی (از صبح به شب)
+        todayRecords.sort((a, b) => a._sortValue - b._sortValue);
 
-      if (todayRecords.length > 0) {
-        const lastRecord = todayRecords[todayRecords.length - 1];
-        console.log("آخرین رکورد:", lastRecord.type);
-
-        if (lastRecord.type === "in") {
-          this.currentStatus = "in";
-          this.currentCheckInTime = lastRecord.time;
-          this.updateCheckButton("خروج", "in");
-          console.log("✅ وضعیت: داخل محیط کار");
+        // ۴. تصمیم‌گیری نهایی بر اساس آخرین رکورد زنجیره
+        if (todayRecords.length === 0) {
+            // هیچ رکوردی نیست -> قطعا خارجیم -> دکمه: ثبت ورود
+            this.setStatusOut();
         } else {
-          this.currentStatus = "out";
-          this.updateCheckButton("ورود", "out");
-          console.log("✅ وضعیت: خارج از محیط کار");
+            const lastRecord = todayRecords[todayRecords.length - 1];
+            
+            if (lastRecord.type === 'in') {
+                // آخرین رکورد "ورود" است -> یعنی الان داخل هستیم -> دکمه: ثبت خروج
+                this.setStatusIn(lastRecord.time);
+            } else {
+                // آخرین رکورد "خروج" است -> یعنی الان خارج هستیم -> دکمه: ثبت ورود
+                this.setStatusOut();
+            }
         }
-      } else {
-        this.currentStatus = "out";
-        this.updateCheckButton("ورود", "out");
-        console.log("✅ وضعیت: خارج از محیط کار (هیچ رکوردی برای امروز)");
-      }
     } catch (error) {
-      console.error("❌ خطا در بررسی وضعیت فعلی:", error);
-      this.currentStatus = "out";
-      this.updateCheckButton("ورود", "out");
+        console.error("❌ خطای سیستم هوشمند:", error);
+        this.setStatusOut(); // در صورت خطا، حالت پیش‌فرض خروج
     }
-  }
+}
+
+// توابع کمکی جدید برای تمیز نگه داشتن کد (این‌ها را هم در کلاس اضافه کنید)
+setStatusIn(time) {
+    if (this.currentStatus !== 'in') {
+        this.currentStatus = 'in';
+        this.currentCheckInTime = time;
+        this.updateCheckButton("خروج", "in");
+        this.updateAppBadge('in');
+        console.log("✅ وضعیت تشخیص داده شد: داخل (In)");
+    }
+}
+
+setStatusOut() {
+    if (this.currentStatus !== 'out') {
+        this.currentStatus = 'out';
+        this.currentCheckInTime = null;
+        this.updateCheckButton("ورود", "out");
+        this.updateAppBadge('out');
+        console.log("✅ وضعیت تشخیص داده شد: خارج (Out)");
+    }
+}
 
   // اصلاح تابع updateTime برای نمایش روز هفته
   updateTime() {
@@ -5587,7 +6050,11 @@ performUpdate() {
   }
 
   // ایجاد مودال ویرایش
-  createEditModal() {
+createEditModal() {
+    // حذف مودال قبلی اگر وجود دارد تا با تنظیمات جدید ساخته شود
+    const existingModal = document.getElementById('editModal');
+    if (existingModal) existingModal.remove();
+
     const modal = document.createElement("div");
     modal.className = "modal";
     modal.id = "editModal";
@@ -5600,25 +6067,35 @@ performUpdate() {
             <form id="editForm">
                 <input type="hidden" id="editRecordId">
                 <div class="form-group">
-                    <label class="form-label">ساعت و دقیقه</label>
+                    <label class="form-label">زمان ثبت</label>
                     <div class="time-picker-container">
-                        <div class="time-picker">
+                        <div class="time-picker" style="direction: ltr; display: flex; justify-content: center; gap: 5px; align-items: center;">
                             <div class="time-section">
-                                <label>ساعت:</label>
-                                <select class="form-control hour-picker" id="editHour" required>
+                                <label>ساعت</label>
+                                <select class="form-control hour-picker" id="editHour" required style="width: 70px;">
                                     ${this.generateHourOptions()}
                                 </select>
                             </div>
+                            <span style="font-weight: bold; margin-top: 25px;">:</span>
                             <div class="time-section">
-                                <label>دقیقه:</label>
-                                <select class="form-control minute-picker" id="editMinute" required>
+                                <label>دقیقه</label>
+                                <select class="form-control minute-picker" id="editMinute" required style="width: 70px;">
                                     ${this.generateMinuteOptions()}
                                 </select>
                             </div>
+                            <span style="font-weight: bold; margin-top: 25px;">:</span>
                             <div class="time-section">
-                                <label>ثانیه:</label>
-                                <select class="form-control second-picker" id="editSecond" required>
+                                <label>ثانیه</label>
+                                <select class="form-control second-picker" id="editSecond" required style="width: 70px;">
                                     ${this.generateSecondOptions()}
+                                </select>
+                            </div>
+                            
+                            <div class="time-section" id="ampmSection" style="display: none; margin-left: 10px;">
+                                <label>نوبت</label>
+                                <select class="form-control" id="editAmPm" style="width: 80px;">
+                                    <option value="AM">صبح</option>
+                                    <option value="PM">عصر</option>
                                 </select>
                             </div>
                         </div>
@@ -5632,31 +6109,41 @@ performUpdate() {
 
     // event listener برای فرم ویرایش
     document.getElementById("editForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      this.saveEdit();
+        e.preventDefault();
+        this.saveEdit();
     });
 
     // event listener برای بستن مودال
     modal.querySelector(".close-modal").addEventListener("click", () => {
-      this.handleModalClose(modal);
+        modal.style.display = "none";
     });
-  }
+    
+    // بستن با کلیک بیرون
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.style.display = "none";
+    });
+}
 
   // تولید گزینه‌های ساعت
-  generateHourOptions() {
+generateHourOptions() {
     let options = "";
     const is24h = this.settings.timeFormat === "24h";
-    const maxHour = is24h ? 23 : 12;
-
-    for (let i = 0; i <= maxHour; i++) {
-      const value = is24h ? i : i === 0 ? 12 : i;
-      const displayValue = value.toString().padStart(2, "0");
-      options += `<option value="${displayValue}">${toPersianDigits(
-        displayValue
-      )}</option>`;
+    
+    if (is24h) {
+        // حالت ۲۴ ساعته: ۰۰ تا ۲۳
+        for (let i = 0; i <= 23; i++) {
+            const displayValue = i.toString().padStart(2, "0");
+            options += `<option value="${displayValue}">${this.toPersianDigits(displayValue)}</option>`;
+        }
+    } else {
+        // حالت ۱۲ ساعته: ۰۱ تا ۱۲
+        for (let i = 1; i <= 12; i++) {
+            const displayValue = i.toString().padStart(2, "0");
+            options += `<option value="${displayValue}">${this.toPersianDigits(displayValue)}</option>`;
+        }
     }
     return options;
-  }
+}
 
   // تولید گزینه‌های دقیقه
   generateMinuteOptions() {
@@ -5679,55 +6166,98 @@ performUpdate() {
   }
 
   // باز کردن مودال ویرایش با مقادیر فعلی
-  openEditModal(id) {
+openEditModal(id) {
     const record = this.records.find((r) => r.id === id);
     if (!record) return;
 
-    if (!document.getElementById("editModal")) {
-      this.createEditModal();
-    }
+    // همیشه مودال را از نو می‌سازیم تا گزینه‌های ساعت بر اساس تنظیمات فعلی آپدیت شوند
+    this.createEditModal();
 
-    const [hours, minutes, seconds] = record.time.split(":");
+    const modal = document.getElementById("editModal");
+    const is24h = this.settings.timeFormat === "24h";
+    const ampmSection = document.getElementById("editAmPm");
+    const ampmContainer = document.getElementById("ampmSection");
+
+    let [hours, minutes, seconds] = record.time.split(":");
+    hours = parseInt(hours);
 
     document.getElementById("editRecordId").value = id;
-    document.getElementById("editHour").value = hours;
     document.getElementById("editMinute").value = minutes;
     document.getElementById("editSecond").value = seconds;
 
-    document.getElementById("editModal").style.display = "flex";
-  }
+    if (is24h) {
+        // حالت ۲۴ ساعته
+        document.getElementById("editHour").value = hours.toString().padStart(2, "0");
+        if (ampmContainer) ampmContainer.style.display = "none";
+    } else {
+        // حالت ۱۲ ساعته (تبدیل ۲۴ به ۱۲)
+        let displayHour = hours % 12;
+        displayHour = displayHour === 0 ? 12 : displayHour; // ساعت ۰ و ۱۲ باید ۱۲ نمایش داده شوند
+        const ampm = hours >= 12 ? "PM" : "AM";
+
+        document.getElementById("editHour").value = displayHour.toString().padStart(2, "0");
+        document.getElementById("editAmPm").value = ampm;
+        if (ampmContainer) ampmContainer.style.display = "flex";
+    }
+
+    modal.style.display = "flex";
+}
 
   // ذخیره ویرایش
-  saveEdit() {
+saveEdit() {
     const id = parseInt(document.getElementById("editRecordId").value);
-    const hour = document.getElementById("editHour").value;
+    let hour = parseInt(document.getElementById("editHour").value);
     const minute = document.getElementById("editMinute").value;
     const second = document.getElementById("editSecond").value;
+    const is24h = this.settings.timeFormat === "24h";
 
-    const newTime = `${hour}:${minute}:${second}`;
+    if (!is24h) {
+        const ampm = document.getElementById("editAmPm").value;
+        if (ampm === "PM" && hour < 12) hour += 12;
+        else if (ampm === "AM" && hour === 12) hour = 0;
+    }
 
-    // اعتبارسنجی زمان
+    const newTime = `${hour.toString().padStart(2, "0")}:${minute}:${second}`;
+
     if (!this.isValidTime(newTime)) {
-      this.showNotification("زمان وارد شده معتبر نیست", "error");
-      return;
+        this.showNotification("زمان نامعتبر است", "error");
+        return;
     }
 
     const recordIndex = this.records.findIndex((r) => r.id === id);
     if (recordIndex !== -1) {
-      this.records[recordIndex].time = newTime;
-      this.saveToStorage("attendanceRecords", this.records);
+        const record = this.records[recordIndex];
+        
+        // 🔥 بررسی هوشمند منطق زمانی قبل از ذخیره
+        // ما ID رکورد فعلی را میفرستیم تا خودش را با خودش مقایسه نکند
+        const logicCheck = this.validateTimeLogic(record.date, newTime, record.type, id);
+        
+        if (!logicCheck.valid) {
+            alert(`⛔ امکان ویرایش وجود ندارد:\n${logicCheck.message}`);
+            return;
+        }
 
-      document.getElementById("editModal").style.display = "none";
-      this.showNotification("زمان با موفقیت ویرایش شد", "success");
+        // اعمال تغییرات
+        this.records[recordIndex].time = newTime;
+        this.records[recordIndex].timestamp = new Date(`${record.date}T${newTime}`).getTime();
 
-      // به روزرسانی نمایش و محاسبات
-      this.loadTodayRecords();
-      this.updateStats();
-      this.loadMonthlyReport();
-      this.loadYearlyReport();
+        this.saveToStorage("attendanceRecords", this.records);
+        document.getElementById("editModal").style.display = "none";
+        
+        // همگام‌سازی هوشمند
+        this.checkCurrentStatus();
+        this.loadTodayRecords();
+        this.updateStats();
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
+        
+        if(document.getElementById('archiveModal')?.style.display === 'flex') {
+             this.loadArchiveData();
+        }
+
+        this.showNotification("زمان ویرایش شد", "success");
     }
-  }
-
+}
   // بارگذاری گزارش ماهانه با سیستم جدید
   loadMonthlyReport() {
     const monthlyData = {};
@@ -6316,37 +6846,37 @@ updateMonthlyStatsWithNewSystem(liveTodayHours = null) {
 }
 
   // تابع به‌روزرسانی نمایش آمار ماهانه
-  updateMonthlyDisplay(monthlyData, normalIncome, overtimeIncome, totalIncome) {
+updateMonthlyDisplay(monthlyData, normalIncome, overtimeIncome, totalIncome) {
     try {
-      // به‌روزرسانی ساعات ماهانه
-      const monthlyHoursElement = document.getElementById("monthlyHours");
-      if (monthlyHoursElement) {
-        monthlyHoursElement.textContent = this.formatHoursWithMinutes(
-          monthlyData.totalHours
-        );
-      }
+        const monthlyHoursElement = document.getElementById("monthlyHours");
+        const monthlySalaryElement = document.getElementById("monthlySalary");
+        const workDaysElement = document.getElementById("workDays");
 
-      // به‌روزرسانی درآمد ماهانه
-      const monthlySalaryElement = document.getElementById("monthlySalary");
-      if (monthlySalaryElement) {
-        monthlySalaryElement.textContent = this.formatCurrency(totalIncome);
-      }
+        if (monthlyHoursElement) {
+            // 🔥 اعمال سانسور
+            const text = this.formatHoursWithMinutes(monthlyData.totalHours);
+            monthlyHoursElement.textContent = this.getPrivacyText(text);
+        }
 
-      // به‌روزرسانی روزهای کاری
-      const workDaysElement = document.getElementById("workDays");
-      if (workDaysElement) {
-        workDaysElement.textContent =
-          this.toPersianDigits(monthlyData.workDays) + " روز";
-      }
+        if (monthlySalaryElement) {
+            // 🔥 اعمال سانسور
+            const text = this.formatCurrency(totalIncome);
+            monthlySalaryElement.textContent = this.getPrivacyText(text);
+        }
 
-      // نمایش وضعیت غیبت (اگر وجود دارد)
-      if (monthlyData.isAbsence) {
-        this.showAbsenceWarning(monthlyData.absenceHours);
-      }
+        if (workDaysElement) {
+            // روز کاری معمولا محرمانه نیست ولی اگر خواستید این هم سانسور شود:
+            // workDaysElement.textContent = this.getPrivacyText(this.toPersianDigits(monthlyData.workDays) + " روز");
+            workDaysElement.textContent = this.toPersianDigits(monthlyData.workDays) + " روز";
+        }
+
+        if (monthlyData.isAbsence) {
+            this.showAbsenceWarning(monthlyData.absenceHours);
+        }
     } catch (error) {
-      console.error("خطا در به‌روزرسانی نمایش آمار:", error);
+        console.error("خطا در به‌روزرسانی نمایش آمار:", error);
     }
-  }
+}
 
   // تابع نمایش هشدار غیبت
   showAbsenceWarning(absenceHours) {
@@ -6367,6 +6897,7 @@ updateMonthlyStatsWithNewSystem(liveTodayHours = null) {
 
   // تابع به‌روزرسانی آمار - نسخه اصلاح شده برای سیستم ماهانه
 // تابع اصلاحی
+// جایگزین تابع updateStats در main.js
 updateStats() {
     try {
         const today = this.getTodayDate();
@@ -6375,7 +6906,7 @@ updateStats() {
         // محاسبه ساعات کار امروز
         let todayHours = this.calculateTodayHours(todayRecords);
         
-        // اگر نمایش زنده فعال است و در حالت ورود هستیم، جلسه فعلی را اضافه کن
+        // اگر زنده است و داخلیم
         if (this.settings.liveStatsUpdate && this.currentStatus === 'in' && this.currentCheckInTime) {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
@@ -6385,11 +6916,11 @@ updateStats() {
             todayHours += currentSessionHours;
         }
         
-        // به‌روزرسانی ساعات امروز
-        document.getElementById('todayHours').textContent = this.formatHoursWithMinutes(todayHours);
+        // 🔥 اعمال حریم خصوصی روی ساعت امروز
+        const todayHoursText = this.formatHoursWithMinutes(todayHours);
+        document.getElementById('todayHours').textContent = this.getPrivacyText(todayHoursText);
         
-        // استفاده از سیستم جدید محاسبه ماهانه
-        // ↓↓↓ این خط اصلاح شد تا ساعات زنده را پاس دهد ↓↓↓
+        // پاس دادن ساعت زنده به محاسبات ماهانه
         this.updateMonthlyStatsWithNewSystem(todayHours);
         
     } catch (error) {
@@ -6905,250 +7436,186 @@ updateStats() {
   }
 
   // حذف رکورد
-  deleteRecord(id) {
-    if (confirm("آیا از حذف این رکورد اطمینان دارید؟")) {
-      this.records = this.records.filter((record) => record.id !== id);
-      this.saveToStorage("attendanceRecords", this.records);
-      this.loadTodayRecords();
-      this.loadMonthlyReport();
-      this.loadYearlyReport();
-      this.updateStats();
-      this.showNotification("رکورد با موفقیت حذف شد", "success");
+deleteRecord(id) {
+    if (confirm("آیا از حذف این رکورد اطمینان دارید؟\nسیستم به طور هوشمند وضعیت را به‌روزرسانی خواهد کرد.")) {
+        // حذف رکورد از آرایه
+        this.records = this.records.filter((record) => record.id !== id);
+        this.saveToStorage("attendanceRecords", this.records);
+        
+        // 🔥 فراخوانی مغز هوشمند برای تشخیص وضعیت جدید
+        this.checkCurrentStatus();
+
+        // به‌روزرسانی سایر بخش‌ها
+        this.loadTodayRecords();
+        this.updateStats();
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
+        
+        this.showNotification("رکورد حذف شد و وضعیت سیستم به‌روزرسانی گردید", "success");
     }
-  }
+}
 
   // تابع ذخیره تنظیمات - نسخه کاملاً اصلاح شده
-  saveSettings() {
+// جایگزین تابع saveSettings در main.js
+saveSettings() {
     try {
-      console.log("💾 شروع ذخیره‌سازی تنظیمات...");
+        console.log("💾 شروع ذخیره‌سازی تنظیمات...");
 
-      // ایجاد یک کپی از تنظیمات فعلی به جای استفاده از پیش‌فرض
-      const newSettings = JSON.parse(JSON.stringify(this.settings));
+        // کپی از تنظیمات فعلی
+        const newSettings = JSON.parse(JSON.stringify(this.settings));
 
-      // 🔥 بخش کاملاً اصلاح شده برای ذخیره تنظیمات
+        // --- 1. تنظیمات اصلی ---
+        const hourlyRate = document.getElementById('hourlyRate');
+        if (hourlyRate) newSettings.hourlyRate = parseInt(hourlyRate.value) || this.settings.hourlyRate;
+        
+        const overtimeRate = document.getElementById('overtimeRate');
+        if (overtimeRate) newSettings.overtimeRate = parseInt(overtimeRate.value) || this.settings.overtimeRate;
+        
+        const monthlyWorkHours = document.getElementById('monthlyWorkHours');
+        if (monthlyWorkHours) newSettings.monthlyWorkHours = parseInt(monthlyWorkHours.value) || 192;
+        
+        const absenceThreshold = document.getElementById('absenceThreshold');
+        if (absenceThreshold) newSettings.absenceThreshold = parseInt(absenceThreshold.value) || 24;
+        
+        const overtimeThreshold = document.getElementById('overtimeThreshold');
+        if (overtimeThreshold) newSettings.overtimeThreshold = parseInt(overtimeThreshold.value) || this.settings.overtimeThreshold;
 
-      // 1. تنظیمات اصلی
-      const hourlyRate = document.getElementById("hourlyRate");
-      const overtimeRate = document.getElementById("overtimeRate");
-      const dailyHours = document.getElementById("dailyHours");
-      const workDaysPerWeek = document.getElementById("workDaysPerWeek");
-      const overtimeThreshold = document.getElementById("overtimeThreshold");
+        const strictCheckbox = document.getElementById('enableStrictValidation');
+        if (strictCheckbox) newSettings.enableStrictValidation = strictCheckbox.checked;
 
-      if (hourlyRate)
-        newSettings.hourlyRate =
-          parseInt(hourlyRate.value) || this.settings.hourlyRate;
-      if (overtimeRate)
-        newSettings.overtimeRate =
-          parseInt(overtimeRate.value) || this.settings.overtimeRate;
-      if (dailyHours)
-        newSettings.dailyHours =
-          parseInt(dailyHours.value) || this.settings.dailyHours;
-      if (workDaysPerWeek)
-        newSettings.workDaysPerWeek =
-          parseInt(workDaysPerWeek.value) || this.settings.workDaysPerWeek;
-      if (overtimeThreshold)
-        newSettings.overtimeThreshold =
-          parseInt(overtimeThreshold.value) || this.settings.overtimeThreshold;
+        // --- 2. تنظیمات نمایش ---
+        const fontFamily = document.getElementById('fontFamily');
+        if (fontFamily) newSettings.fontFamily = fontFamily.value;
+        
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) newSettings.theme = themeSelect.value;
 
-      // 2. تنظیمات نمایش - با مقداردهی پیشفرض ایمن
-      const fontFamilySelect = document.getElementById("fontFamily");
-      if (fontFamilySelect)
-        newSettings.fontFamily = fontFamilySelect.value || "AsaGity";
+        const showReports = document.getElementById('showReportsDisplay');
+        if (showReports) newSettings.showReportsDisplay = showReports.checked;
 
-      const currencyUnitSelect = document.getElementById("currencyUnit");
-      if (currencyUnitSelect)
-        newSettings.currencyUnit = currencyUnitSelect.value || "rial";
+        const liveStats = document.getElementById('liveStatsUpdate');
+        if (liveStats) newSettings.liveStatsUpdate = liveStats.checked;
+        
+        const enableBgAnim = document.getElementById('enableBackgroundAnimation');
+        if (enableBgAnim) newSettings.enableBackgroundAnimation = enableBgAnim.checked;
 
-      const timeFormatSelect = document.getElementById("timeFormat");
-      if (timeFormatSelect)
-        newSettings.timeFormat = timeFormatSelect.value || "24h";
+        const showTime = document.getElementById('showTimeDisplay');
+        if (showTime) newSettings.showTimeDisplay = showTime.checked;
 
-      // 🔥 بخش تنظیمات تم
-      const themeSelect = document.getElementById("theme");
-      if (themeSelect) {
-        this.settings.theme = themeSelect.value;
-        console.log("🎯 تم ذخیره شد:", this.settings.theme);
-      }
+        const showDate = document.getElementById('showDateDisplay');
+        if (showDate) newSettings.showDateDisplay = showDate.checked;
 
-      const enableBackgroundAnimation = document.getElementById(
-        "enableBackgroundAnimation"
-      );
-      if (enableBackgroundAnimation)
-        newSettings.enableBackgroundAnimation =
-          enableBackgroundAnimation.checked;
+        const currencyUnit = document.getElementById('currencyUnit');
+        if (currencyUnit) newSettings.currencyUnit = currencyUnit.value;
 
-      const showTimeDisplay = document.getElementById("showTimeDisplay");
-      if (showTimeDisplay)
-        newSettings.showTimeDisplay = showTimeDisplay.checked !== false;
+        const timeFormat = document.getElementById('timeFormat');
+        if (timeFormat) newSettings.timeFormat = timeFormat.value;
 
-      const showDateDisplay = document.getElementById("showDateDisplay");
-      if (showDateDisplay)
-        newSettings.showDateDisplay = showDateDisplay.checked !== false;
+        // --- 3. تنظیمات پشتیبان‌گیری ---
+        const autoBackup = document.getElementById('autoBackupEnabled');
+        if (autoBackup) {
+            newSettings.autoBackup = {
+                enabled: autoBackup.checked,
+                onExit: document.getElementById('backupOnExit')?.checked !== false,
+                onCheckOut: document.getElementById('backupOnCheckOut')?.checked !== false,
+                maxBackups: parseInt(document.getElementById('maxBackups')?.value) || 10,
+                backupLocation: document.getElementById('backupLocation')?.value || 'auto'
+            };
+        }
 
-      // در تابع saveSettings، بخش مربوط به نمایش گزارش‌ها رو اینطور اصلاح کن:
-      const showReportsDisplay = document.getElementById("showReportsDisplay");
-      if (showReportsDisplay) {
-        const newReportsDisplayState = showReportsDisplay.checked;
+        // --- 4. تنظیمات روزهای اضافه کاری ---
+        const overtimeContainer = document.getElementById('overtimeDaysContainer');
+        if (overtimeContainer) {
+            const overtimeDaysSettings = this.settings.overtimeDaysSettings || {};
+            overtimeContainer.querySelectorAll('.day-checkbox').forEach(checkbox => {
+                const dayValue = parseInt(checkbox.dataset.day);
+                const dayId = checkbox.id.replace('_checkbox', '');
+                
+                if (checkbox.checked) {
+                    const allDayRadio = document.getElementById(`${dayId}_allDay`);
+                    const isAllDay = allDayRadio ? allDayRadio.checked : true;
+                    let startTime = "00:00";
+                    let endTime = "23:59";
 
-        console.log("📊 وضعیت جدید نمایش گزارش‌ها:", newReportsDisplayState);
+                    if (!isAllDay) {
+                        const startH = document.querySelector(`#${dayId}_startTimePicker select[data-type="hour"]`)?.value || "00";
+                        const startM = document.querySelector(`#${dayId}_startTimePicker select[data-type="minute"]`)?.value || "00";
+                        const endH = document.querySelector(`#${dayId}_endTimePicker select[data-type="hour"]`)?.value || "23";
+                        const endM = document.querySelector(`#${dayId}_endTimePicker select[data-type="minute"]`)?.value || "59";
+                        startTime = `${startH}:${startM}`;
+                        endTime = `${endH}:${endM}`;
+                    }
+                    overtimeDaysSettings[dayValue] = { enabled: true, allDay: isAllDay, startTime, endTime };
+                } else {
+                    if (overtimeDaysSettings[dayValue]) overtimeDaysSettings[dayValue].enabled = false;
+                }
+            });
+            newSettings.overtimeDaysSettings = overtimeDaysSettings;
+        }
 
-        // همیشه ذخیره کن
-        newSettings.showReportsDisplay = newReportsDisplayState;
-
-        // 🔥 بلافاصله وضعیت رو اعمال کن
-        setTimeout(() => {
-          this.applyReportsVisibility(newReportsDisplayState);
-        }, 100);
-      }
-
-      const liveStatsUpdate = document.getElementById("liveStatsUpdate");
-      if (liveStatsUpdate)
-        newSettings.liveStatsUpdate = liveStatsUpdate.checked || false;
-
-      // 3. تنظیمات پشتیبان‌گیری
-      const autoBackupEnabled = document.getElementById("autoBackupEnabled");
-      const backupOnExit = document.getElementById("backupOnExit");
-      const backupOnCheckOut = document.getElementById("backupOnCheckOut");
-      const maxBackups = document.getElementById("maxBackups");
-      const backupLocation = document.getElementById("backupLocation");
-
-      if (autoBackupEnabled) {
-        newSettings.autoBackup = {
-          enabled: autoBackupEnabled.checked,
-          onExit: backupOnExit ? backupOnExit.checked : true,
-          onCheckOut: backupOnCheckOut ? backupOnCheckOut.checked : true,
-          maxBackups: maxBackups ? parseInt(maxBackups.value) : 10,
-          backupLocation: backupLocation ? backupLocation.value : "auto",
-        };
-      }
-
-      // 4. 🔥 بخش حیاتی: روزهای خارج از ساعت - نسخه کاملاً اصلاح شده
-      const overtimeDaysSettings = this.settings.overtimeDaysSettings || {}; // حفظ تنظیمات قبلی
-
-      const overtimeContainer = document.getElementById(
-        "overtimeDaysContainer"
-      );
-      if (overtimeContainer) {
-        const dayCheckboxes =
-          overtimeContainer.querySelectorAll(".day-checkbox");
-
-        console.log("📅 تعداد روزهای پیدا شده:", dayCheckboxes.length);
-
-        dayCheckboxes.forEach((checkbox) => {
-          const dayValue = parseInt(checkbox.dataset.day);
-          const dayId = checkbox.id.replace("_checkbox", "");
-
-          console.log(
-            `📅 پردازش روز ${dayId}، مقدار: ${dayValue}، وضعیت: ${checkbox.checked}`
-          );
-
-          if (checkbox.checked) {
-            const allDayRadio = document.getElementById(`${dayId}_allDay`);
-            const specificRadio = document.getElementById(`${dayId}_specific`);
-
-            const isAllDay = allDayRadio ? allDayRadio.checked : true;
-
-            let startTime = "00:00";
-            let endTime = "23:59";
-
-            if (!isAllDay) {
-              // خواندن زمان‌ها از time pickerها
-              const startHourElement = document.querySelector(
-                `#${dayId}_startTimePicker select[data-type="hour"]`
-              );
-              const startMinuteElement = document.querySelector(
-                `#${dayId}_startTimePicker select[data-type="minute"]`
-              );
-              const endHourElement = document.querySelector(
-                `#${dayId}_endTimePicker select[data-type="hour"]`
-              );
-              const endMinuteElement = document.querySelector(
-                `#${dayId}_endTimePicker select[data-type="minute"]`
-              );
-
-              console.log("⏰ المنت‌های زمان:", {
-                startHour: startHourElement?.value,
-                startMinute: startMinuteElement?.value,
-                endHour: endHourElement?.value,
-                endMinute: endMinuteElement?.value,
-              });
-
-              if (startHourElement && startMinuteElement) {
-                const startHour = startHourElement.value.padStart(2, "0");
-                const startMinute = startMinuteElement.value.padStart(2, "0");
-                startTime = `${startHour}:${startMinute}`;
-              }
-
-              if (endHourElement && endMinuteElement) {
-                const endHour = endHourElement.value.padStart(2, "0");
-                const endMinute = endMinuteElement.value.padStart(2, "0");
-                endTime = `${endHour}:${endMinute}`;
-              }
-            }
-
-            overtimeDaysSettings[dayValue] = {
-              enabled: true,
-              allDay: isAllDay,
-              startTime: startTime,
-              endTime: endTime,
+        // --- 5. 🔥 تنظیمات سیستم هوشمند (GPS و وای‌فای) ---
+        // حتماً باید چک کنیم که این المان‌ها در DOM وجود داشته باشند (یعنی تب سیستم هوشمند ساخته شده باشد)
+        // اگر تب باز نشده باشد، مقادیر null هستند. پس فقط در صورتی آپدیت می‌کنیم که المان‌ها باشند.
+        
+        const enableGpsCheckbox = document.getElementById('enableGpsAuto');
+        if (enableGpsCheckbox) {
+            // اگر المان‌ها هستند، مقادیر جدید را بخوان
+            const gpsEnabled = enableGpsCheckbox.checked;
+            const workLat = document.getElementById('workLat').value;
+            const workLng = document.getElementById('workLng').value;
+            
+            // ساخت آبجکت GPS
+            newSettings.gps = {
+                enabled: gpsEnabled,
+                // اگر مختصات خالی بود (هنوز ست نشده)، از مقادیر قبلی استفاده کن
+                lat: workLat ? parseFloat(workLat) : (this.settings.gps?.lat || 35.6892),
+                lng: workLng ? parseFloat(workLng) : (this.settings.gps?.lng || 51.3890),
+                radius: parseInt(document.getElementById('gpsRadius')?.value) || 100,
+                autoCheckIn: document.getElementById('gpsAutoCheckIn')?.checked !== false,
+                autoCheckOut: document.getElementById('gpsAutoCheckOut')?.checked !== false
             };
 
-            console.log(
-              `✅ روز ${dayId} ذخیره شد:`,
-              overtimeDaysSettings[dayValue]
-            );
-          } else {
-            // اگر تیک نخورده، فقط enabled رو false کن ولی بقیه تنظیمات رو حفظ کن
-            if (overtimeDaysSettings[dayValue]) {
-              overtimeDaysSettings[dayValue].enabled = false;
-            } else {
-              overtimeDaysSettings[dayValue] = {
-                enabled: false,
-                allDay: false,
-                startTime: "00:00",
-                endTime: "23:59",
-              };
-            }
-            console.log(`❌ روز ${dayId} غیرفعال شد`);
-          }
-        });
-      }
+            // تنظیمات وای‌فای
+    newSettings.autoWifiEnabled = document.getElementById('autoWifiCheck')?.checked || false;
+    newSettings.workWifis = document.getElementById('workWifis')?.value?.split('\n') || [];
+    newSettings.autoCheckInHours = document.getElementById('autoCheckInHours')?.value || "8:00-10:00";
+    newSettings.autoCheckOutHours = document.getElementById('autoCheckOutHours')?.value || "13:30-18:00";
+        } 
+        // نکته: اگر تب هوشمند باز نشده باشد، مقادیر قبلی در newSettings باقی می‌مانند (از کپی خط اول)
 
-      // ذخیره تنظیمات روزها
-      newSettings.overtimeDaysSettings = overtimeDaysSettings;
+        // --- ذخیره نهایی ---
+        this.settings = newSettings;
+        this.saveToStorage("attendanceSettings", this.settings);
 
-      // 5. ذخیره نهایی تنظیمات
-      this.settings = newSettings;
-      this.saveToStorage("attendanceSettings", this.settings);
+        console.log("✅ تنظیمات با موفقیت ذخیره شد.");
 
-      console.log("✅ تمام تنظیمات ذخیره شد:", this.settings);
-      console.log("📊 تنظیمات روزهای خارج از ساعت:", overtimeDaysSettings);
+        // اعمال تغییرات ظاهری
+        this.applyFontFamily();
+        this.applyThemeFromSettings();
+        this.toggleBackgroundAnimation(this.settings.enableBackgroundAnimation);
+        this.applyReportsVisibility(this.settings.showReportsDisplay);
+        
+        if (this.settings.liveStatsUpdate) this.startLiveStatsUpdate();
+        else this.stopLiveStatsUpdate();
 
-      // 6. اعمال تغییرات
-      this.applyFontFamily();
-      this.applyThemeFromSettings();
-      this.toggleBackgroundAnimation(this.settings.enableBackgroundAnimation);
-      this.updateTime();
-      this.updateSeasonDisplay();
-      this.toggleReportsDisplay(this.settings.showReportsDisplay);
+        // مدیریت سرویس GPS
+if (this.settings.gps && this.settings.gps.enabled) {
+    this.startGPSMonitoring();
+} else {
+    this.stopGPSMonitoring();
+}
 
-      // 7. کنترل سیستم نمایش زنده
-      if (this.settings.liveStatsUpdate) {
-        this.startLiveStatsUpdate();
-        console.log("🚀 سیستم نمایش زنده فعال شد");
-      } else {
-        this.stopLiveStatsUpdate();
-        this.updateStats();
-      }
+        this.showNotification("✅ تنظیمات با موفقیت ذخیره شد", "success");
+        
+        // بستن مودال
+        document.getElementById('settingsModal').style.display = 'none';
+        this.settingsChanged = false;
 
-      this.showNotification("✅ تنظیمات با موفقیت ذخیره شد", "success");
-      document.getElementById("settingsModal").style.display = "none";
-      this.settingsChanged = false;
     } catch (error) {
-      console.error("❌ خطا در ذخیره تنظیمات:", error);
-      this.showNotification("❌ خطا در ذخیره تنظیمات", "error");
+        console.error("❌ خطا در ذخیره تنظیمات:", error);
+        this.showNotification("❌ خطا در ذخیره تنظیمات", "error");
     }
-  }
+}
   // تابع جدید برای محاسبه ساعات اضافه کاری در بازه زمانی مشخص
   calculateOvertimeHoursForDay(records, date) {
     const dateObj = new Date(date);
@@ -8215,131 +8682,111 @@ updateStats() {
   }
 
   // نمایش نوتیفیکیشن
-  showNotification(message, type) {
+showNotification(message, type = 'info') { // 🔥 مقدار پیش‌فرض 'info' اضافه شد
     const notification = document.getElementById("notification");
     const notificationText = document.getElementById("notificationText");
 
+    if (!notification || !notificationText) return;
+
     notificationText.textContent = message;
 
+    // تنظیم z-index بسیار بالا تا روی مودال‌های جدید (که 10020 هستند) بیاید
     notification.style.zIndex = "11000";
+    
+    // پاک کردن کلاس‌های رنگی قبلی
     notification.className = "notification";
+    
+    // اضافه کردن کلاس جدید
+    // اگر type خالی باشد، خودکار 'info' می‌شود
     notification.classList.add(`notification-${type}`, "show");
 
-    setTimeout(() => {
-      notification.classList.remove("show");
-    }, 3000);
-  }
+    // حذف خودکار بعد از ۳ ثانیه
+    if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+    
+    this.notificationTimeout = setTimeout(() => {
+        notification.classList.remove("show");
+    }, 3500);
+}
 
-  // حذف event listenerهای قدیمی و اضافه کردن نسخه جدید
-  setupEventListeners() {
+// جایگزین تابع setupEventListeners در main.js
+setupEventListeners() {
     console.log("🔧 در حال راه‌اندازی event listeners...");
 
-    // حذف event listenerهای قبلی اگر وجود دارند
-    const oldButton = document.getElementById("checkInOutBtn");
-    if (oldButton) {
-      const newButton = oldButton.cloneNode(true);
-      oldButton.parentNode.replaceChild(newButton, oldButton);
-    }
-
-    // دکمه ثبت ورود/خروج - با بررسی ایمن
+    // ... (کدهای قبلی دکمه ثبت ورود/خروج و تب‌ها سر جای خود بمانند) ...
+    
+    // دکمه ثبت ورود/خروج
     const checkInOutBtn = document.getElementById("checkInOutBtn");
     if (checkInOutBtn) {
-      console.log("✅ دکمه ثبت ورود/خروج پیدا شد");
-      checkInOutBtn.addEventListener("click", () => {
-        console.log("🎯 دکمه ثبت ورود/خروج کلیک شد");
-        this.checkInOut();
-      });
-    } else {
-      console.error("❌ دکمه ثبت ورود/خروج پیدا نشد!");
+        // حذف قبلی برای اطمینان
+        const newBtn = checkInOutBtn.cloneNode(true);
+        checkInOutBtn.parentNode.replaceChild(newBtn, checkInOutBtn);
+        newBtn.addEventListener("click", () => this.checkInOut());
     }
 
-    // بقیه event listenerها...
-    // تب‌ها
+    // تب‌های صفحه اصلی
     document.querySelectorAll(".tab").forEach((tab) => {
-      tab.addEventListener("click", () => {
-        document
-          .querySelectorAll(".tab")
-          .forEach((t) => t.classList.remove("active"));
-        tab.classList.add("active");
-
-        const tabId = tab.dataset.tab + "Tab";
-        document.querySelectorAll(".tab-content").forEach((content) => {
-          content.classList.remove("active");
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            const tabId = tab.dataset.tab + "Tab";
+            document.querySelectorAll(".tab-content").forEach((content) => content.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
         });
-        document.getElementById(tabId).classList.add("active");
-      });
     });
 
-    // دکمه تنظیمات
-    document.getElementById("settingsBtn").addEventListener("click", () => {
-      this.openSettingsModal();
-    });
-
-    // دکمه آرشیو
-    document.getElementById("archiveBtn").addEventListener("click", () => {
-      this.openArchiveModal();
-    });
-
-    // فرم تنظیمات
-    document.getElementById("settingsForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      this.saveSettings();
-    });
+    // دکمه‌های اصلی
+    document.getElementById("settingsBtn").addEventListener("click", () => this.openSettingsModal());
+    document.getElementById("archiveBtn").addEventListener("click", () => this.openArchiveModal());
+    
+    // 🔥 دکمه جدید حریم خصوصی
+    const privacyBtn = document.getElementById("privacyToggleBtn");
+    if (privacyBtn) {
+        privacyBtn.addEventListener("click", () => this.togglePrivacyMode());
+        this.updatePrivacyIcon(); // تنظیم آیکون اولیه
+    }
 
     this.setupReportsToggle();
 
-    // تشخیص تغییرات در تنظیمات
-    document.getElementById("settingsForm").addEventListener("input", () => {
-      this.settingsChanged = true;
-    });
-
-    document.getElementById("settingsForm").addEventListener("change", () => {
-      this.settingsChanged = true;
-    });
-
-    // دکمه‌های صادرات
-    document.getElementById("exportJsonBtn").addEventListener("click", () => {
-      this.exportToJson();
-    });
-
-    document.getElementById("exportCsvBtn").addEventListener("click", () => {
-      this.exportToCsv();
-    });
-
-    document.getElementById("exportExcelBtn").addEventListener("click", () => {
-      this.exportToExcel();
-    });
-
-    // دکمه بستن نوتیفیکیشن
-    document
-      .querySelector(".close-notification")
-      ?.addEventListener("click", () => {
-        document.getElementById("notification").classList.remove("show");
-      });
-
-    // تغییر تم
-    document.getElementById("themeToggle").addEventListener("click", () => {
-      this.toggleTheme();
-    });
+    // دکمه تم
+    document.getElementById("themeToggle").addEventListener("click", () => this.toggleTheme());
 
     // مدیریت بستن مودال‌ها
     this.setupModalCloseHandlers();
 
-    // مدیریت کلید Escape
+    // کلید Escape
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        this.handleEscapeKey();
-      }
+        if (e.key === "Escape") this.handleEscapeKey();
     });
 
-    // هشدار هنگام بستن صفحه
+    // بستن صفحه
     window.addEventListener("beforeunload", (e) => {
-      if (this.settingsChanged) {
-        e.preventDefault();
-        e.returnValue = "تغییرات ذخیره نشده است";
-      }
+        if (this.settingsChanged) {
+            e.preventDefault();
+            e.returnValue = "تغییرات ذخیره نشده است";
+        }
     });
-  }
+}
+
+// 🔥 تابع جدید: راه‌اندازی ردیابی تغییرات روی کل فرم
+// این تابع را باید بعد از باز شدن مودال تنظیمات (در openSettingsModal) صدا بزنید
+setupSettingsFormTracking() {
+    const form = document.getElementById('settingsForm');
+    if (!form) return;
+
+    this.settingsChanged = false;
+
+    // استفاده از Event Delegation: گوش دادن به تغییرات روی خود فرم
+    // اینطوری حتی اگر محتوای داخل فرم (تب‌ها) عوض شود، باز هم کار می‌کند
+    form.addEventListener('input', () => {
+        this.settingsChanged = true;
+        // console.log("تغییر در تنظیمات (Input)");
+    });
+
+    form.addEventListener('change', () => {
+        this.settingsChanged = true;
+        // console.log("تغییر در تنظیمات (Change)");
+    });
+}
 
   // متدهای کمکی جدید
   setupModalCloseHandlers() {
@@ -8599,6 +9046,11 @@ updateStats() {
       modal.querySelector(".close-modal").addEventListener("click", () => {
         modal.style.display = "none";
       });
+
+      this.switchSettingsTab('main'); // لود تب اول
+    
+    // 🔥 فعال‌سازی ردیابی تغییرات روی کل فرم
+    this.setupSettingsFormTracking();
 
       // نمایش مودال
       modal.style.display = "flex";
@@ -9438,56 +9890,77 @@ updateStats() {
     document.getElementById("archiveRecordDay").value = currentJalali.day;
   }
 
-  addArchiveRecord() {
+// جایگزین تابع addArchiveRecord قبلی در main.js
+addArchiveRecord() {
     try {
-      const year = document.getElementById("archiveRecordYear").value;
-      const month = document.getElementById("archiveRecordMonth").value;
-      const day = document.getElementById("archiveRecordDay").value;
-      const type = document.getElementById("archiveRecordType").value;
-      const hour = document.getElementById("archiveRecordHour").value;
-      const minute = document.getElementById("archiveRecordMinute").value;
-      const second = document.getElementById("archiveRecordSecond").value;
-      const isManual = document.getElementById("archiveRecordIsManual").checked;
+        const year = document.getElementById("archiveRecordYear").value;
+        const month = document.getElementById("archiveRecordMonth").value;
+        const day = document.getElementById("archiveRecordDay").value;
+        const type = document.getElementById("archiveRecordType").value;
+        const hour = document.getElementById("archiveRecordHour").value;
+        const minute = document.getElementById("archiveRecordMinute").value;
+        const second = document.getElementById("archiveRecordSecond").value;
+        const isManual = document.getElementById("archiveRecordIsManual").checked;
 
-      // ساخت تاریخ شمسی به فرمت yyyy/mm/dd
-      const jalaliDate = `${year}/${month.toString().padStart(2, "0")}/${day
-        .toString()
-        .padStart(2, "0")}`;
-      const timeString = `${hour}:${minute}:${second}`;
+        const jalaliDate = `${year}/${month.toString().padStart(2, "0")}/${day.toString().padStart(2, "0")}`;
+        const timeString = `${hour}:${minute}:${second}`;
+        const gregorianDate = this.jalaliToGregorian(jalaliDate);
 
-      console.log("📅 تاریخ شمسی وارد شده:", jalaliDate);
+        // 1. اعتبارسنجی هوشمند
+        const logicCheck = this.validateTimeLogic(gregorianDate, timeString, type);
+        if (!logicCheck.valid) {
+            // اینجا پیام خطا می‌دهیم اما چون کاربر می‌خواد اصلاح کنه، راهنمایی می‌کنیم
+            if (confirm(`⛔ خطای منطقی:\n${logicCheck.message}\n\nآیا می‌خواهید موقتاً «دقت ورود و خروج» را غیرفعال کنید و این رکورد را ثبت کنید؟`)) {
+                // کاربر می‌خواهد فورس ثبت کند -> موقتا تنظیمات را در رم عوض می‌کنیم
+                this.settings.enableStrictValidation = false;
+                this.saveToStorage("attendanceSettings", this.settings);
+                // حالا که غیرفعال شد، ادامه میدیم (تابع دوباره اجرا نمیشه، فقط خطوط بعدی اجرا میشن)
+            } else {
+                return; // کاربر انصراف داد
+            }
+        }
 
-      // تبدیل تاریخ شمسی به میلادی
-      const gregorianDate = this.jalaliToGregorian(jalaliDate);
-      console.log("📅 تاریخ میلادی تبدیل شده:", gregorianDate);
+        const newRecord = {
+            id: Date.now(),
+            type: type,
+            time: timeString,
+            date: gregorianDate,
+            timestamp: new Date(`${gregorianDate}T${timeString}`).getTime(),
+            manual: isManual,
+        };
 
-      const newRecord = {
-        id: Date.now(),
-        type: type,
-        time: timeString,
-        date: gregorianDate,
-        timestamp: new Date(`${gregorianDate}T${timeString}`).getTime(),
-        manual: isManual,
-      };
+        this.records.push(newRecord);
+        this.saveToStorage("attendanceRecords", this.records);
 
-      console.log("🆕 رکورد جدید:", newRecord);
+        // بستن مودال کوچک "افزودن رکورد" (نه مودال تنظیمات)
+        document.getElementById("addArchiveRecordModal").style.display = "none";
+        this.showNotification("✅ رکورد جدید افزوده شد", "success");
 
-      this.records.push(newRecord);
-      this.saveToStorage("attendanceRecords", this.records);
+        // 2. همگام‌سازی بدون بستن تنظیمات
+        // اگر رکورد مال امروز بود، صفحه اصلی را آپدیت کن
+        const today = this.getTodayDate();
+        if (gregorianDate === today) {
+            this.checkCurrentStatus();
+            this.loadTodayRecords();
+            this.updateStats();
+        }
+        
+        // آپدیت محاسبات کلی
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
 
-      document.getElementById("addArchiveRecordModal").style.display = "none";
-      this.showNotification("✅ رکورد جدید با موفقیت افزوده شد", "success");
+        // 3. رفرش کردن لیست آرشیو در تنظیمات (بدون بستن تب)
+        // بررسی می‌کنیم که آیا تب آرشیو در تنظیمات باز است؟
+        const archiveTabContent = document.getElementById('archiveTab');
+        if (archiveTabContent && archiveTabContent.classList.contains('active')) {
+            this.searchArchive(); // فقط جدول داخل تب را رفرش می‌کند
+        }
 
-      // به‌روزرسانی نمایش آرشیو
-      this.searchArchive();
     } catch (error) {
-      console.error("❌ خطا در افزودن رکورد:", error);
-      this.showNotification(
-        `❌ خطا در افزودن رکورد: ${error.message}`,
-        "error"
-      );
+        console.error("❌ خطا در افزودن رکورد:", error);
+        this.showNotification(`❌ خطا: ${error.message}`, "error");
     }
-  }
+}
 
   attachArchiveRowEventListeners() {
     try {
@@ -10447,105 +10920,82 @@ updateStats() {
     });
   }
 
-  // تابع باز کردن مودال ویرایش روز - نسخه اصلاح شده
-  openEditDayModal(date, records) {
+// جایگزین تابع openEditDayModal در main.js
+openEditDayModal(date, records) {
     try {
-      const jalaliDate = toJalaliDate(date);
+        const jalaliDate = toJalaliDate(date);
+        
+        // حذف مودال قبلی اگر باز مانده
+        const existing = document.getElementById('editDayModal');
+        if (existing) existing.remove();
 
-      // اگر مودال از قبل وجود دارد، حذف کن
-      const existingModal = document.getElementById("editDayModal");
-      if (existingModal) {
-        existingModal.remove();
-      }
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'editDayModal';
+        
+        // 🔥 تنظیم Z-Index بسیار بالاتر از تنظیمات (که معمولا 10000 است)
+        // این باعث می‌شود مودال ویرایش روز "روی" تنظیمات قرار بگیرد
+        modal.style.zIndex = "10020"; 
+        modal.style.background = "rgba(0,0,0,0.6)"; // تاریک کردن پس‌زمینه
 
-      const modal = document.createElement("div");
-      modal.className = "modal";
-      modal.id = "editDayModal";
-      modal.style.zIndex = "10010";
+        // ساخت محتوای جدول
+        let rowsHTML = records.map((record, index) => {
+            let timeValue = record.time;
+            // اصلاح فرمت ساعت اگر ثانیه دارد
+            if (timeValue && timeValue.split(':').length > 2) {
+                timeValue = timeValue.split(':').slice(0, 2).join(':') + ':' + timeValue.split(':')[2];
+            }
 
-      modal.innerHTML = `
-            <div class="modal-content" style="max-width: 700px; z-index: 10011;">
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>
+                        <select class="form-control record-type" data-id="${record.id}">
+                            <option value="in" ${record.type === 'in' ? 'selected' : ''}>ورود</option>
+                            <option value="out" ${record.type === 'out' ? 'selected' : ''}>خروج</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="time" class="form-control record-time" 
+                               value="${timeValue}" step="1">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger delete-single-record" data-id="${record.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 700px; z-index: 10021; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
                 <div class="modal-header">
                     <h2 class="modal-title">✏️ ویرایش روز ${jalaliDate}</h2>
-                    <button class="close-modal">&times;</button>
+                    <button type="button" class="close-modal">&times;</button>
                 </div>
                 <div style="padding: 20px;">
-                    <p>${records.length} رکورد برای این تاریخ وجود دارد.</p>
-                    
                     <div class="table-container" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>ردیف</th>
-                                    <th>نوع</th>
+                                    <th style="width:50px">#</th>
+                                    <th style="width:100px">نوع</th>
                                     <th>ساعت</th>
-                                    <th>عملیات</th>
+                                    <th style="width:60px">حذف</th>
                                 </tr>
                             </thead>
                             <tbody id="editDayRecordsBody">
-                                ${records
-                                  .map((record, index) => {
-                                    // اصلاح فرمت زمان - تبدیل به فرمت مناسب برای input type="time"
-                                    const timeParts = record.time.split(":");
-                                    let timeValue = record.time;
-
-                                    // اگر زمان دارای بخش میلی‌ثانیه است، آن را حذف کن
-                                    if (timeParts.length > 3) {
-                                      timeValue = timeParts
-                                        .slice(0, 3)
-                                        .join(":");
-                                    }
-
-                                    // اطمینان از فرمت HH:mm:ss
-                                    if (timeParts.length === 2) {
-                                      timeValue = record.time + ":00";
-                                    }
-
-                                    return `
-                                        <tr>
-                                            <td>${index + 1}</td>
-                                            <td>
-                                                <select class="form-control record-type" data-id="${
-                                                  record.id
-                                                }">
-                                                    <option value="in" ${
-                                                      record.type === "in"
-                                                        ? "selected"
-                                                        : ""
-                                                    }>ورود</option>
-                                                    <option value="out" ${
-                                                      record.type === "out"
-                                                        ? "selected"
-                                                        : ""
-                                                    }>خروج</option>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="time" class="form-control record-time" 
-                                                       data-id="${
-                                                         record.id
-                                                       }" value="${timeValue}" step="1">
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-danger delete-single-record" data-id="${
-                                                  record.id
-                                                }">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `;
-                                  })
-                                  .join("")}
+                                ${rowsHTML}
                             </tbody>
                         </table>
                     </div>
                     
                     <div class="action-buttons" style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-success" id="addRecordToDay">
+                        <button type="button" class="btn btn-success" id="addRecordToDayBtn">
                             <i class="fas fa-plus"></i> افزودن رکورد جدید
                         </button>
-                        <button class="btn btn-primary" id="saveDayChanges">
+                        <button type="button" class="btn btn-primary" id="saveDayChangesBtn">
                             <i class="fas fa-save"></i> ذخیره تغییرات
                         </button>
                     </div>
@@ -10553,138 +11003,136 @@ updateStats() {
             </div>
         `;
 
-      document.body.appendChild(modal);
-      modal.style.display = "flex";
+        // مودال را به body اضافه می‌کنیم (نه داخل فرم تنظیمات)
+        document.body.appendChild(modal);
+        modal.style.display = "flex";
 
-      // Event Listeners
-      document
-        .getElementById("saveDayChanges")
-        .addEventListener("click", () => {
-          this.saveDayChanges(date, records);
-          modal.style.display = "none";
+        // --- Event Listeners ---
+
+        // 1. دکمه افزودن (جلوگیری از انتشار کلیک)
+        document.getElementById('addRecordToDayBtn').addEventListener('click', (e) => {
+            e.preventDefault(); 
+            e.stopPropagation();
+            this.addRecordToDay(date, modal);
         });
 
-      document
-        .getElementById("addRecordToDay")
-        .addEventListener("click", () => {
-          this.addRecordToDay(date, modal);
+        // 2. دکمه ذخیره
+        document.getElementById('saveDayChangesBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.saveDayChanges(date);
+            // نکته: saveDayChanges خودش مودال را رفرش می‌کند، اگر می‌خواهید بعد از ذخیره بسته شود
+            // باید در تابع saveDayChanges دستور بستن را اضافه کنید.
+            // اما طبق درخواست شما، اینجا فقط ذخیره می‌کند و زیرش تنظیمات باز است.
         });
 
-      // Event Listeners برای حذف رکوردهای تکی
-      modal.querySelectorAll(".delete-single-record").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          const recordId = parseInt(e.target.closest("button").dataset.id);
-          this.deleteSingleRecord(recordId, date, modal);
+        // 3. دکمه‌های حذف تکی
+        modal.querySelectorAll('.delete-single-record').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = e.target.closest('button').dataset.id;
+                this.deleteSingleRecord(id, date, modal);
+            });
         });
-      });
 
-      modal.querySelector(".close-modal").addEventListener("click", () => {
-        modal.style.display = "none";
-      });
+        // 4. بستن مودال (فقط همین مودال بسته شود)
+        modal.querySelector('.close-modal').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            modal.remove();
+        });
 
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-          modal.style.display = "none";
-        }
-      });
+        // 5. بستن با کلیک بیرون (اختیاری)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                e.stopPropagation();
+                modal.remove();
+            }
+        });
+
     } catch (error) {
-      console.error("❌ خطا در ایجاد مودال ویرایش روز:", error);
-      this.showNotification("❌ خطا در باز کردن ویرایشگر", "error");
+        console.error("Error opening edit day modal:", error);
     }
-  }
+}
 
   // تابع جدید: افزودن رکورد جدید به روز
-  addRecordToDay(date, modal) {
-    try {
-      const tbody = document.getElementById("editDayRecordsBody");
-      const newRecordId = Date.now();
+// جایگزین تابع addRecordToDay در main.js
+addRecordToDay(date, modal) {
+    const tbody = document.getElementById('editDayRecordsBody');
+    const tempId = `temp_${Date.now()}`;
 
-      const newRow = document.createElement("tr");
-      newRow.innerHTML = `
-            <td>${tbody.children.length + 1}</td>
-            <td>
-                <select class="form-control record-type" data-id="${newRecordId}">
-                    <option value="in">ورود</option>
-                    <option value="out">خروج</option>
-                </select>
-            </td>
-            <td>
-                <input type="time" class="form-control record-time" 
-                       data-id="${newRecordId}" value="08:00:00" step="1">
-            </td>
-            <td>
-                <button class="btn btn-sm btn-danger delete-single-record" data-id="${newRecordId}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+    const tr = document.createElement('tr');
+    tr.style.background = "#e3f2fd"; // آبی کمرنگ برای تشخیص جدید بودن
 
-      tbody.appendChild(newRow);
+    tr.innerHTML = `
+        <td><span style="font-size:10px; background:#17a2b8; color:white; padding:2px 4px; border-radius:3px;">جدید</span></td>
+        <td>
+            <select class="form-control record-type" data-id="${tempId}">
+                <option value="in">ورود</option>
+                <option value="out">خروج</option>
+            </select>
+        </td>
+        <td>
+            <input type="time" class="form-control record-time" step="1">
+        </td>
+        <td>
+            <button class="btn btn-sm btn-danger delete-temp-row">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
 
-      // اضافه کردن event listener برای دکمه حذف جدید
-      newRow
-        .querySelector(".delete-single-record")
-        .addEventListener("click", (e) => {
-          const recordId = parseInt(e.target.closest("button").dataset.id);
-          this.deleteSingleRecord(recordId, date, modal);
-        });
+    tbody.appendChild(tr);
+    
+    // اسکرول به پایین
+    const container = modal.querySelector('.table-container');
+    if(container) container.scrollTop = container.scrollHeight;
 
-      this.showNotification("✅ رکورد جدید اضافه شد", "success");
-    } catch (error) {
-      console.error("❌ خطا در افزودن رکورد جدید:", error);
-      this.showNotification("❌ خطا در افزودن رکورد", "error");
-    }
-  }
-
+    // حذف سطر جدید (بدون نیاز به تاییدیه دیتابیس)
+    tr.querySelector('.delete-temp-row').addEventListener('click', () => {
+        tr.remove();
+    });
+}
   // تابع جدید: حذف رکورد تکی
-  deleteSingleRecord(recordId, date, modal) {
-    try {
-      // پیدا کردن رکورد در آرایه
-      const recordIndex = this.records.findIndex(
-        (record) => record.id === recordId
-      );
-
-      if (recordIndex === -1) {
-        // اگر رکورد در آرایه اصلی نیست (رکورد جدید است)، فقط از DOM حذف کن
-        const row = document
-          .querySelector(`[data-id="${recordId}"]`)
-          ?.closest("tr");
-        if (row) {
-          row.remove();
-          this.updateRowNumbers(modal);
-        }
+deleteSingleRecord(recordId, date, modal) {
+    // اگر دکمه حذف سطر جدید (temp) زده شد، اینجا کاری نداریم (چون در تابع addRecordToDay هندل شد)
+    if (String(recordId).startsWith('temp_')) {
+        const btn = document.querySelector(`.delete-single-record[data-id="${recordId}"]`);
+        if (btn) btn.closest('tr').remove();
         return;
-      }
-
-      const record = this.records[recordIndex];
-      const recordTime = this.formatTime(record.time);
-
-      if (
-        confirm(
-          `آیا از حذف رکورد ${
-            record.type === "in" ? "ورود" : "خروج"
-          } ساعت ${recordTime} اطمینان دارید؟`
-        )
-      ) {
-        // حذف از آرایه اصلی
-        this.records.splice(recordIndex, 1);
-
-        // حذف از DOM
-        const row = document
-          .querySelector(`[data-id="${recordId}"]`)
-          ?.closest("tr");
-        if (row) {
-          row.remove();
-          this.updateRowNumbers(modal);
-        }
-
-        this.showNotification("✅ رکورد با موفقیت حذف شد", "success");
-      }
-    } catch (error) {
-      console.error("❌ خطا در حذف رکورد:", error);
-      this.showNotification("❌ خطا در حذف رکورد", "error");
     }
-  }
+
+    // حذف رکورد واقعی از دیتابیس
+    if (confirm("آیا از حذف این رکورد ذخیره شده اطمینان دارید؟")) {
+        const recordIndex = this.records.findIndex(r => r.id === parseInt(recordId));
+        
+        if (recordIndex !== -1) {
+            this.records.splice(recordIndex, 1);
+            this.saveToStorage("attendanceRecords", this.records);
+            
+            // حذف آنی از جدول
+            const btn = document.querySelector(`.delete-single-record[data-id="${recordId}"]`);
+            if (btn) btn.closest('tr').remove();
+
+            this.showNotification("✅ رکورد حذف شد", "success");
+
+            // همگام‌سازی
+            const today = this.getTodayDate();
+            if (date === today) {
+                this.checkCurrentStatus();
+                this.loadTodayRecords();
+                this.updateStats();
+            }
+            this.loadMonthlyReport();
+            this.loadYearlyReport();
+            
+            if (document.getElementById('archiveTableBody')) {
+                this.searchArchive();
+            }
+        }
+    }
+}
 
   // تابع جدید: به‌روزرسانی شماره ردیف‌ها
   updateRowNumbers(modal) {
@@ -10695,146 +11143,277 @@ updateStats() {
   }
 
   // تابع ذخیره تغییرات روز - نسخه کاملاً اصلاح شده
-  saveDayChanges(date, originalRecords) {
+// جایگزین تابع saveDayChanges در main.js
+saveDayChanges(date, originalRecords) {
     try {
-      console.log("💾 شروع ذخیره تغییرات روز...");
+        console.log("💾 شروع ذخیره‌سازی...");
+        
+        const rows = document.querySelectorAll('#editDayRecordsBody tr');
+        
+        // لیست‌هایی برای نگهداری وضعیت
+        const finalRecordsToSave = []; 
+        let hasChanges = false;
 
-      const recordsToUpdate = [];
-      const recordsToAdd = [];
-      let hasChanges = false;
+        // ۱. پیمایش تمام سطرهای جدول (چه جدید، چه قدیم)
+        for (let row of rows) {
+            const typeSelect = row.querySelector('.record-type');
+            const timeInput = row.querySelector('.record-time');
+            
+            // اگر سطر هدر یا نامعتبر بود رد شو
+            if (!typeSelect || !timeInput) continue;
 
-      // جمع‌آوری تمام رکوردهای موجود در جدول
-      document.querySelectorAll("#editDayRecordsBody tr").forEach((row) => {
-        const typeSelect = row.querySelector(".record-type");
-        const timeInput = row.querySelector(".record-time");
-        const recordId = parseInt(typeSelect.dataset.id);
+            const idStr = typeSelect.dataset.id; // شناسه (temp_... یا عدد)
+            const type = typeSelect.value;
+            let time = timeInput.value;
 
-        if (typeSelect && timeInput) {
-          const newType = typeSelect.value;
-          let newTime = timeInput.value;
-
-          // اطمینان از فرمت صحیح زمان
-          if (newTime) {
-            const timeParts = newTime.split(":");
-            if (timeParts.length === 2) {
-              newTime += ":00"; // اضافه کردن ثانیه اگر وجود ندارد
+            // اگر رکورد جدید است ولی ساعت ندارد، خطا بده و متوقف شو
+            if (String(idStr).startsWith('temp_')) {
+                if (!time) {
+                    alert("⛔ خطا: یکی از رکوردهای جدید فاقد ساعت است. لطفاً ساعت را وارد کنید یا آن را حذف کنید.");
+                    return;
+                }
+                // رکورد جدید یعنی قطعاً تغییر داریم
+                hasChanges = true;
             }
-          }
 
-          // بررسی اینکه آیا رکورد جدید است یا موجود
-          const existingRecordIndex = this.records.findIndex(
-            (record) => record.id === recordId
-          );
+            // فرمت ساعت
+            if (time && time.split(':').length === 2) time += ":00";
 
-          if (existingRecordIndex !== -1) {
-            // رکورد موجود
-            const existingRecord = this.records[existingRecordIndex];
-
-            if (
-              newType !== existingRecord.type ||
-              newTime !== existingRecord.time
-            ) {
-              existingRecord.type = newType;
-              existingRecord.time = newTime;
-              existingRecord.timestamp = new Date(
-                `${date}T${newTime}`
-              ).getTime();
-              hasChanges = true;
-              console.log(`🔄 رکورد موجود به‌روزرسانی شد: ${recordId}`);
+            // بررسی تغییر در رکوردهای قدیمی
+            if (!String(idStr).startsWith('temp_')) {
+                const existing = this.records.find(r => r.id === parseInt(idStr));
+                if (existing) {
+                    if (existing.type !== type || existing.time !== time) {
+                        hasChanges = true;
+                    }
+                }
             }
-          } else {
-            // رکورد جدید
+
+            // ساخت آبجکت برای لیست نهایی (هنوز ذخیره نمی‌کنیم)
+            finalRecordsToSave.push({
+                idStr: idStr, // برای تشخیص هویت
+                type: type,
+                time: time,
+                // عدد برای مرتب‌سازی
+                _sortValue: this.timeToMinutes(time)
+            });
+        }
+
+        // اگر هیچ تغییری نبود
+        if (!hasChanges) {
+            this.showNotification("⚠️ تغییری برای ذخیره وجود ندارد", "info");
+            return;
+        }
+
+        // ۲. مرتب‌سازی زمانی کل لیست
+        finalRecordsToSave.sort((a, b) => a._sortValue - b._sortValue);
+
+        // ۳. اعتبارسنجی منطقی (پلیس) روی لیست نهایی
+        // فقط اگر تیک فعال باشد
+        if (this.settings.enableStrictValidation !== false) {
+            let currentStatus = 'out'; // فرض شروع روز
+            
+            for (let rec of finalRecordsToSave) {
+                if (rec.type === 'in') {
+                    if (currentStatus === 'in') {
+                        alert(`⛔ خطای منطقی:\nدر ساعت ${rec.time} ورود ثبت شده در حالی که ورود قبلی هنوز باز است.\n(دو ورود پشت سر هم)`);
+                        return;
+                    }
+                    currentStatus = 'in';
+                } else {
+                    if (currentStatus === 'out') {
+                        alert(`⛔ خطای منطقی:\nدر ساعت ${rec.time} خروج ثبت شده بدون اینکه ورودی داشته باشد.`);
+                        return;
+                    }
+                    currentStatus = 'out';
+                }
+            }
+            
+            // چک کردن پایان روز (اختیاری: اگر آخرین رکورد ورود باشد)
+            // فعلاً گیر نمی‌دهیم چون شاید هنوز روز تمام نشده
+        }
+
+        // ۴. حالا که همه چیز درست است، دیتابیس را آپدیت می‌کنیم
+        
+        // الف) حذف تمام رکوردهای قدیمی این روز از دیتابیس (برای جلوگیری از تکرار و مدیریت حذف‌ها)
+        // نکته: این روش امن‌تر است چون لیست finalRecordsToSave شامل همه چیزهایی است که باید بماند
+        // اما برای حفظ ID رکوردهای قدیمی، باید هوشمندانه عمل کنیم.
+        
+        // روش امن‌تر:
+        // ۱. رکوردهای جدید را بساز و اضافه کن
+        finalRecordsToSave.filter(r => String(r.idStr).startsWith('temp_')).forEach(item => {
             const newRecord = {
-              id: recordId,
-              type: newType,
-              time: newTime,
-              date: date,
-              timestamp: new Date(`${date}T${newTime}`).getTime(),
-              manual: true,
+                id: Date.now() + Math.floor(Math.random() * 10000),
+                type: item.type,
+                time: item.time,
+                date: date,
+                timestamp: new Date(`${date}T${item.time}`).getTime(),
+                manual: true
             };
-            recordsToAdd.push(newRecord);
-            hasChanges = true;
-            console.log(`🆕 رکورد جدید اضافه شد: ${recordId}`);
-          }
-        }
-      });
+            this.records.push(newRecord);
+        });
 
-      // اضافه کردن رکوردهای جدید به آرایه اصلی
-      if (recordsToAdd.length > 0) {
-        this.records.push(...recordsToAdd);
-      }
+        // ۲. رکوردهای قدیمی را آپدیت کن
+        finalRecordsToSave.filter(r => !String(r.idStr).startsWith('temp_')).forEach(item => {
+            const existing = this.records.find(r => r.id === parseInt(item.idStr));
+            if (existing) {
+                existing.type = item.type;
+                existing.time = item.time;
+                existing.timestamp = new Date(`${date}T${item.time}`).getTime();
+            }
+        });
 
-      if (hasChanges || recordsToAdd.length > 0) {
-        // مرتب‌سازی رکوردها بر اساس timestamp
+        // ۳. مرتب‌سازی نهایی کل دیتابیس
         this.records.sort((a, b) => a.timestamp - b.timestamp);
-
-        // ذخیره تغییرات
+        
+        // ۵. ذخیره و رفرش
         this.saveToStorage("attendanceRecords", this.records);
-        this.showNotification("✅ تغییرات با موفقیت ذخیره شد", "success");
+        this.showNotification("✅ تغییرات با موفقیت اعمال شد", "success");
 
-        // به‌روزرسانی نمایش‌ها
-        setTimeout(() => {
-          this.loadTodayRecords();
-          this.updateStats();
-          this.loadMonthlyReport();
-          this.loadYearlyReport();
-
-          // اگر در آرشیو هستیم، آن را هم به‌روزرسانی کن
-          if (document.getElementById("archiveTableBody")) {
-            this.searchArchive();
-          }
-        }, 500);
-      } else {
-        this.showNotification("⚠️ هیچ تغییری اعمال نشده است", "info");
-      }
-    } catch (error) {
-      console.error("❌ خطا در ذخیره تغییرات:", error);
-      this.showNotification("❌ خطا در ذخیره تغییرات", "error");
-    }
-  }
-
-  // ذخیره تغییرات ویرایش روز
-  saveDayChanges(date) {
-    try {
-      const recordsToUpdate = this.records.filter(
-        (record) => record.date === date
-      );
-      let hasChanges = false;
-
-      // بروزرسانی رکوردهای موجود
-      recordsToUpdate.forEach((record) => {
-        const typeSelect = document.querySelector(
-          `.record-type[data-id="${record.id}"]`
-        );
-        const timeInput = document.querySelector(
-          `.record-time[data-id="${record.id}"]`
-        );
-
-        if (typeSelect && timeInput) {
-          const newType = typeSelect.value;
-          const newTime = timeInput.value + ":00"; // اضافه کردن ثانیه
-
-          if (newType !== record.type || newTime !== record.time) {
-            record.type = newType;
-            record.time = newTime;
-            record.timestamp = new Date(`${date}T${newTime}`).getTime();
-            hasChanges = true;
-          }
+        // ۶. همگام‌سازی تمام بخش‌ها
+        const today = this.getTodayDate();
+        if (date === today) {
+            this.checkCurrentStatus();
+            this.loadTodayRecords();
+            this.updateStats();
         }
-      });
+        this.loadMonthlyReport();
+        this.loadYearlyReport();
 
-      if (hasChanges) {
-        this.saveToStorage("attendanceRecords", this.records);
-        this.showNotification("✅ تغییرات با موفقیت ذخیره شد", "success");
-        this.searchArchive(); // بروزرسانی نمایش
-      } else {
-        this.showNotification("⚠️ هیچ تغییری اعمال نشده است", "info");
-      }
+        // ۷. رفرش مودال و آرشیو
+        if (document.getElementById('archiveTableBody')) {
+            this.searchArchive();
+        }
+        
+        // بازخوانی مودال ویرایش (برای اینکه رکوردهای جدید ID واقعی بگیرند و رنگشان عادی شود)
+        const updatedRecords = this.records.filter(r => r.date === date);
+        this.openEditDayModal(date, updatedRecords);
+
     } catch (error) {
-      console.error("خطا در ذخیره تغییرات:", error);
-      this.showNotification("❌ خطا در ذخیره تغییرات", "error");
+        console.error("❌ خطا در ذخیره تغییرات:", error);
+        this.showNotification("❌ خطا در ذخیره", "error");
     }
-  }
+}
+  // ذخیره تغییرات ویرایش روز
+// جایگزین تابع saveDayChanges در main.js
+saveDayChanges(date) {
+    try {
+        console.log("💾 شروع ذخیره‌سازی تغییرات...");
+        let updatesCount = 0;
+        let addsCount = 0;
+        let hasErrors = false;
+
+        const rows = document.querySelectorAll('#editDayRecordsBody tr');
+
+        // ۱. پیمایش تمام سطرهای جدول
+        for (let row of rows) {
+            const typeSelect = row.querySelector('.record-type');
+            const timeInput = row.querySelector('.record-time');
+
+            if (!typeSelect || !timeInput) continue;
+
+            const idStr = typeSelect.dataset.id; // شناسه (temp_... یا عدد واقعی)
+            const type = typeSelect.value;
+            let time = timeInput.value;
+
+            // اصلاح فرمت ساعت
+            if (time && time.split(':').length === 2) time += ":00";
+
+            // --- سناریوی ۱: رکورد جدید است (temp) ---
+            if (String(idStr).startsWith('temp_')) {
+                if (!time) continue; // اگر ساعت ندارد، نادیده بگیر (ذخیره نکن)
+
+                // اعتبارسنجی منطقی (اگر پلیس فعال باشد)
+                const logicCheck = this.validateTimeLogic(date, time, type);
+                if (!logicCheck.valid) {
+                    alert(`⛔ خطا در رکورد جدید:\n${logicCheck.message}`);
+                    hasErrors = true;
+                    continue; // این رکورد را رد کن ولی بقیه را ادامه بده
+                }
+
+                // ساخت و افزودن رکورد
+                const newRecord = {
+                    id: Date.now() + Math.floor(Math.random() * 10000),
+                    type: type,
+                    time: time,
+                    date: date,
+                    timestamp: new Date(`${date}T${time}`).getTime(),
+                    manual: true
+                };
+                this.records.push(newRecord);
+                addsCount++;
+            } 
+            
+            // --- سناریوی ۲: رکورد قدیمی است (ویرایش) ---
+            else {
+                const recordId = parseInt(idStr);
+                const existingRecord = this.records.find(r => r.id === recordId);
+
+                if (existingRecord) {
+                    // چک می‌کنیم آیا تغییری کرده؟
+                    if (existingRecord.type !== type || existingRecord.time !== time) {
+                        
+                        // اعتبارسنجی منطقی
+                        const logicCheck = this.validateTimeLogic(date, time, type, recordId);
+                        if (!logicCheck.valid) {
+                            alert(`⛔ خطا در ویرایش رکورد:\n${logicCheck.message}`);
+                            hasErrors = true;
+                            continue;
+                        }
+
+                        // اعمال تغییرات
+                        existingRecord.type = type;
+                        existingRecord.time = time;
+                        existingRecord.timestamp = new Date(`${date}T${time}`).getTime();
+                        updatesCount++;
+                    }
+                }
+            }
+        }
+
+        // ۲. ذخیره نهایی و به‌روزرسانی
+        if (addsCount > 0 || updatesCount > 0) {
+            // مرتب‌سازی کل رکوردها بر اساس زمان
+            this.records.sort((a, b) => a.timestamp - b.timestamp);
+            this.saveToStorage("attendanceRecords", this.records);
+
+            this.showNotification(`✅ ذخیره شد: ${addsCount} رکورد جدید، ${updatesCount} ویرایش`, "success");
+
+            // ۳. همگام‌سازی تمام بخش‌های برنامه
+            const today = this.getTodayDate();
+            if (date === today) {
+                this.checkCurrentStatus();
+                this.loadTodayRecords();
+                this.updateStats();
+            }
+            this.loadMonthlyReport();
+            this.loadYearlyReport();
+
+            // رفرش لیست آرشیو اصلی (اگر باز است)
+            if (document.getElementById('archiveTableBody')) {
+                this.searchArchive();
+            }
+
+            // 🔥 مهم: رفرش کردن خود مودال ویرایش (برای اینکه رکوردهای جدید سفید شوند و ID واقعی بگیرند)
+            // ما لیست جدید را از خود this.records می‌خوانیم تا مطمئن شویم چیزی که ذخیره شده نمایش داده می‌شود
+// حذف مودال ویرایش روز
+const editModal = document.getElementById('editDayModal');
+if (editModal) editModal.remove();
+
+// رفرش لیست آرشیو در مودال تنظیمات (که زیرش باز است)
+if (document.getElementById('archiveTableBody')) {
+    this.searchArchive();
+}
+
+        } else if (!hasErrors) {
+            this.showNotification("⚠️ تغییری شناسایی نشد", "info");
+        }
+
+    } catch (error) {
+        console.error("❌ خطا در تابع saveDayChanges:", error);
+        this.showNotification("❌ خطا در ذخیره تغییرات", "error");
+    }
+}
 
   loadAutoCleanupTab(form) {
     form.innerHTML = `
@@ -10941,36 +11520,37 @@ updateStats() {
       });
   }
 
-  // تغییر تب تنظیمات
-  // تغییر تب تنظیمات - نسخه کاملاً اصلاح شده
-  switchSettingsTab(tabName) {
+// جایگزین تابع switchSettingsTab در main.js
+switchSettingsTab(tabName) {
     try {
-      console.log(`🔄 تغییر تب به: ${tabName}`);
+        // 🔥 قدم اول: پیدا کردن تب فعلی و ذخیره داده‌هایش
+        const currentActiveTab = document.querySelector('.settings-tab.active');
+        if (currentActiveTab) {
+            const oldTabName = currentActiveTab.dataset.tab;
+            // ذخیره داده‌های تب قبلی در متغیر this.settings
+            this.saveCurrentViewData(oldTabName);
+        }
 
-      // ذخیره تنظیمات تب فعلی قبل از تغییر
-      this.saveCurrentTabSettings();
+        // مدیریت کلاس active برای تب‌ها
+        document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+        const newActiveTab = document.querySelector(`.settings-tab[data-tab="${tabName}"]`);
+        if (newActiveTab) newActiveTab.classList.add('active');
 
-      // غیرفعال کردن همه تب‌ها
-      document.querySelectorAll(".settings-tab").forEach((tab) => {
-        tab.classList.remove("active");
-      });
+        // پیدا کردن فرم اصلی
+        const form = document.getElementById('settingsForm');
+        if (!form) return;
 
-      // فعال کردن تب جدید
-      const newTab = document.querySelector(
-        `.settings-tab[data-tab="${tabName}"]`
-      );
-      if (newTab) {
-        newTab.classList.add("active");
-      }
+        // پاکسازی محتوای قبلی
+        form.innerHTML = '';
 
-      // لود محتوای تب جدید
-      this.loadSettingsTab(tabName);
+        // لود محتوای جدید
+        // چون this.settings آپدیت شده است، تابع لود مقادیر جدید را نشان می‌دهد
+        this.loadSettingsTab(tabName, form);
 
-      console.log(`✅ تب ${tabName} با موفقیت بارگذاری شد`);
     } catch (error) {
-      console.error(`❌ خطا در تغییر تب به ${tabName}:`, error);
+        console.error(`خطا در تغییر تب به ${tabName}:`, error);
     }
-  }
+}
   // تابع جدید برای ذخیره تنظیمات تب فعلی
   saveCurrentTabSettings() {
     try {
@@ -11006,26 +11586,29 @@ updateStats() {
     }
   }
 
-  // تابع (اصلاحی)
-  saveMainTabSettings() {
+
+// جایگزین تابع saveMainTabSettings در main.js
+saveMainTabSettings() {
+    // خواندن وضعیت چک‌باکس با دقت
+    const strictValidationCheckbox = document.getElementById('enableStrictValidation');
+    // اگر چک‌باکس وجود نداشت، مقدار قبلی را نگه دار، اگر وجود داشت، وضعیتش را بخوان
+    const strictValidationValue = strictValidationCheckbox ? strictValidationCheckbox.checked : this.settings.enableStrictValidation;
+
     const mainSettings = {
-      hourlyRate:
-        parseInt(document.getElementById("hourlyRate")?.value) ||
-        this.settings.hourlyRate,
-      overtimeRate:
-        parseInt(document.getElementById("overtimeRate")?.value) ||
-        this.settings.overtimeRate,
-      monthlyWorkHours:
-        parseInt(document.getElementById("monthlyWorkHours")?.value) || 192, // اصلاح شد
-      absenceThreshold:
-        parseInt(document.getElementById("absenceThreshold")?.value) || 24, // اصلاح شد
-      overtimeThreshold:
-        parseInt(document.getElementById("overtimeThreshold")?.value) ||
-        this.settings.overtimeThreshold,
+        hourlyRate: parseInt(document.getElementById('hourlyRate')?.value) || this.settings.hourlyRate,
+        overtimeRate: parseInt(document.getElementById('overtimeRate')?.value) || this.settings.overtimeRate,
+        monthlyWorkHours: parseInt(document.getElementById('monthlyWorkHours')?.value) || 192,
+        absenceThreshold: parseInt(document.getElementById('absenceThreshold')?.value) || 24,
+        overtimeThreshold: parseInt(document.getElementById('overtimeThreshold')?.value) || this.settings.overtimeThreshold,
+        // 🔥 ذخیره مقدار صحیح
+        enableStrictValidation: strictValidationValue
     };
 
+    // لاگ برای اطمینان از ذخیره شدن
+    console.log("تنظیمات ذخیره شد. حالت پلیس:", strictValidationValue);
+
     this.settings = { ...this.settings, ...mainSettings };
-  }
+}
 
   saveBackupTabSettings() {
     const backupSettings = {
@@ -11087,19 +11670,34 @@ updateStats() {
     }
   }
 
-  saveSmartTabSettings() {
+// جایگزین تابع saveSmartTabSettings در main.js
+saveSmartTabSettings() {
+    const gpsEnabled = document.getElementById('enableGpsAuto')?.checked || false;
+    
     const smartSettings = {
-      autoWifiEnabled:
-        document.getElementById("autoWifiCheck")?.checked || false,
-      workWifis: document.getElementById("workWifis")?.value?.split("\n") || [],
-      autoCheckInHours:
-        document.getElementById("autoCheckInHours")?.value || "8:00-10:00",
-      autoCheckOutHours:
-        document.getElementById("autoCheckOutHours")?.value || "13:30-18:00",
+        autoWifiEnabled: document.getElementById('autoWifiCheck')?.checked || false,
+        workWifis: document.getElementById('workWifis')?.value?.split('\n') || [],
+        
+        // 🔥 ذخیره تنظیمات GPS
+        gps: {
+            enabled: gpsEnabled,
+            lat: parseFloat(document.getElementById('workLat')?.value) || this.settings.gps?.lat,
+            lng: parseFloat(document.getElementById('workLng')?.value) || this.settings.gps?.lng,
+            radius: parseInt(document.getElementById('gpsRadius')?.value) || 100,
+            autoCheckIn: document.getElementById('gpsAutoCheckIn')?.checked,
+            autoCheckOut: document.getElementById('gpsAutoCheckOut')?.checked
+        }
     };
 
     this.settings = { ...this.settings, ...smartSettings };
-  }
+    
+    // اگر GPS فعال شد، سرویس مانیتورینگ را روشن کن
+    if (gpsEnabled) {
+        this.startGPSMonitoring();
+    } else {
+        this.stopGPSMonitoring();
+    }
+}
 
   saveBackupTabSettings() {
     const backupSettings = {
@@ -11240,8 +11838,8 @@ updateStats() {
   }
 
   // اصلاح تابع loadMainSettingsTab - حذف بخش دسترسی سریع
-  // تابع (اصلاحی)
-  loadMainSettingsTab(form) {
+// جایگزین تابع loadMainSettingsTab در main.js
+loadMainSettingsTab(form) {
     form.innerHTML = `
         <div class="tab-content active" id="mainTab">
             <h3 class="tab-title">🎲 تنظیمات اصلی</h3>
@@ -11249,35 +11847,45 @@ updateStats() {
             <div class="form-group">
                 <label class="form-label" for="hourlyRate">مبلغ ساعتی (ریال)</label>
                 <input type="number" class="form-control" id="hourlyRate" required>
+                <small class="form-text text-muted">مبلغ پایه برای هر ساعت کار عادی</small>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="overtimeRate">مبلغ اضافه‌کاری (ریال)</label>
                 <input type="number" class="form-control" id="overtimeRate" required>
+                <small class="form-text text-muted">مبلغ پرداختی برای هر ساعت اضافه‌کاری</small>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="monthlyWorkHours">ساعات کاری ماهانه</label>
                 <input type="number" class="form-control" id="monthlyWorkHours" value="192" required>
-                <small>ساعت کاری موظفی در یک ماه (مثلا 192)</small>
+                <small class="form-text text-muted">ساعت کاری موظفی در یک ماه (مثلاً ۱۹۲ ساعت)</small>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="absenceThreshold">آستانه غیبت (ساعت)</label>
                 <input type="number" class="form-control" id="absenceThreshold" value="24" required>
-                <small>اگر کم‌کاری ماهانه از این عدد بیشتر شود، غیبت محسوب می‌شود (مثلا 24 ساعت معادل 3 روز)</small>
+                <small class="form-text text-muted">اگر کسر کار ماهانه از این مقدار بیشتر شود، در گزارش‌ها هشدار داده می‌شود</small>
             </div>
+            
             <div class="form-group">
                 <label class="form-label" for="overtimeThreshold">آستانه اضافه‌کاری (دقیقه)</label>
                 <input type="number" class="form-control" id="overtimeThreshold" value="15" required>
-                <small>این مورد در حال حاضر در محاسبات ماهانه تاثیری ندارد (مربوط به منطق روزانه بود)</small>
+                <small class="form-text text-muted">حداقل زمان برای محاسبه اضافه‌کاری روزانه (مثلاً ۱۵ دقیقه)</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="enableStrictValidation">
+                    فعال‌سازی دقت ورود و خروج (حالت پلیس)
+                </label>
+                <small class="form-text text-muted" style="display:block; margin-top:5px;">با فعال‌سازی این گزینه، نرم‌افزار جلوی ثبت رکوردهای غیرمنطقی (مثل خروج قبل از ورود) را می‌گیرد.</small>
             </div>
 
             <div class="form-group">
                 <label class="form-label">📅 روزهای خارج از ساعت (اضافه کاری)</label>
-                <div id="overtimeDaysContainer" style="margin-top: 10px;">
-                    </div>
-                <small>در این روزها تمام ساعات کار یا ساعات مشخص شده به عنوان اضافه کاری محاسبه می‌شود.</small>
+                <div id="overtimeDaysContainer" style="margin-top: 10px;"></div>
+                <small class="form-text text-muted">در این روزها تمام ساعات کار یا ساعات مشخص شده به عنوان اضافه کاری محاسبه می‌شود.</small>
             </div>
 
             <div class="form-group">
@@ -11287,7 +11895,7 @@ updateStats() {
                         <i class="fas fa-undo"></i> بازگشت به تنظیمات پیش‌فرض
                     </button>
                 </div>
-                <small>تمام تنظیمات به حالت اولیه بازمی‌گردند. این عمل غیرقابل بازگشت است.</small>
+                <small class="form-text text-muted" style="color: var(--danger)!important;">هشدار: تمام تنظیمات به حالت اولیه بازمی‌گردند. این عمل غیرقابل بازگشت است.</small>
             </div>
 
             <div class="form-group">
@@ -11299,31 +11907,25 @@ updateStats() {
         </div>
     `;
 
-    // اضافه کردن event listener برای دکمه بازگشت به پیش‌فرض
-    document
-      .getElementById("resetToDefaultsBtn")
-      .addEventListener("click", () => {
-        this.resetToDefaultSettings();
-      });
+    // پر کردن مقادیر
+    document.getElementById('hourlyRate').value = this.settings.hourlyRate;
+    document.getElementById('overtimeRate').value = this.settings.overtimeRate;
+    document.getElementById('monthlyWorkHours').value = this.settings.monthlyWorkHours || 192;
+    document.getElementById('absenceThreshold').value = this.settings.absenceThreshold || 24;
+    document.getElementById('overtimeThreshold').value = this.settings.overtimeThreshold;
+    
+    const strictValidation = this.settings.enableStrictValidation !== false; 
+    document.getElementById('enableStrictValidation').checked = strictValidation;
 
-    // پر کردن مقادیر (مهم)
-    document.getElementById("hourlyRate").value = this.settings.hourlyRate;
-    document.getElementById("overtimeRate").value = this.settings.overtimeRate;
-    document.getElementById("monthlyWorkHours").value =
-      this.settings.monthlyWorkHours || 192; // اصلاح شد
-    document.getElementById("absenceThreshold").value =
-      this.settings.absenceThreshold || 24; // اصلاح شد
-    document.getElementById("overtimeThreshold").value =
-      this.settings.overtimeThreshold;
-
-    // ایجاد روزهای هفته برای انتخاب
     this.createOvertimeDaysOptions();
 
-    // event listener برای راهنما
-    document.getElementById("installGuideBtn").addEventListener("click", () => {
-      this.openInstallGuide();
+    document.getElementById('resetToDefaultsBtn').addEventListener('click', () => {
+        this.resetToDefaultSettings();
     });
-  }
+    document.getElementById('installGuideBtn').addEventListener('click', () => {
+        this.openInstallGuide();
+    });
+}
 
   // تابع جدید برای بازگشت به تنظیمات پیش‌فرض
   resetToDefaultSettings() {
@@ -11548,225 +12150,175 @@ updateStats() {
     });
   }
 
-  loadDisplaySettingsTab(form) {
+// جایگزین تابع loadDisplaySettingsTab در main.js
+loadDisplaySettingsTab(form) {
     try {
-      console.log("🔧 بارگذاری تب تنظیمات نمایش...");
+        // خواندن مقادیر فعلی
+        const s = this.settings;
+        
+        // آماده‌سازی وضعیت چک‌باکس‌ها (checked یا خالی)
+        const chkTime = s.showTimeDisplay !== false ? 'checked' : '';
+        const chkDate = s.showDateDisplay !== false ? 'checked' : '';
+        const chkReports = s.showReportsDisplay !== false ? 'checked' : '';
+        const chkLive = s.liveStatsUpdate ? 'checked' : '';
+        const chkAnim = s.enableBackgroundAnimation !== false ? 'checked' : '';
+        const chkNotif = (document.getElementById('enableNotifications')?.checked ?? true) ? 'checked' : '';
+        const chkBadge = (document.getElementById('enableBadge')?.checked ?? true) ? 'checked' : '';
 
-      // مطمئن شو تنظیمات تم مقداردهی شده‌اند
-      this.initializeThemeSettings();
-
-      form.innerHTML = `
-            <div class="tab-content active" id="displayTab">
+        // ساخت HTML با مقادیر تزریق شده (بدون پرش)
+        form.innerHTML = `
+<div class="tab-content active" id="displayTab">
                 <h3 class="tab-title">🎨 تنظیمات نمایش</h3>
 
                 <div class="form-group">
                     <label class="form-label">
-                        <input type="checkbox" id="showTimeDisplay">
-                        نمایش ساعت در صفحه اصلی
+                        <input type="checkbox" id="showTimeDisplay" ${chkTime}> نمایش ساعت در صفحه اصلی
                     </label>
                 </div>
-                
                 <div class="form-group">
                     <label class="form-label">
-                        <input type="checkbox" id="showDateDisplay">
-                        نمایش تاریخ در صفحه اصلی
+                        <input type="checkbox" id="showDateDisplay" ${chkDate}> نمایش تاریخ در صفحه اصلی
                     </label>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">
-                        <input type="checkbox" id="showReportsDisplay">
-                        نمایش گزارش‌ها در صفحه اصلی
+                        <input type="checkbox" id="showReportsDisplay" ${chkReports}> نمایش گزارش‌ها در صفحه اصلی
                     </label>
-                    <small>نمایش بخش گزارش‌های روزانه، ماهانه و سالانه</small>
+                    <small class="form-text text-muted" style="display:block; margin-right:25px;">نمایش بخش گزارش‌های روزانه، ماهانه و سالانه در پایین صفحه</small>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">
-                        <input type="checkbox" id="liveStatsUpdate">
-                        فعال کردن نمایش زنده آمار
+                        <input type="checkbox" id="liveStatsUpdate" ${chkLive}> فعال کردن نمایش زنده آمار
                     </label>
-                    <small>آمار ساعات کار و درآمد به صورت زنده به‌روزرسانی می‌شوند</small>
+                    <small class="form-text text-muted" style="display:block; margin-right:25px;">آمار ساعات کار و درآمد به صورت لحظه‌ای (ثانیه‌شمار) به‌روزرسانی می‌شوند</small>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="fontFamily">فونت نرم‌افزار</label>
                     <select class="form-control" id="fontFamily">
-                        <option value="AsaGity">فونت یکان (پیشفرض)</option>
-                        <option value="AsaGity2">فونت وزیر</option>
-                        <option value="AsaGity3">فونت صمیم</option>
-                        <option value="AsaGity4">فونت تنها</option>
-                        <option value="AsaGity5">فونت شبنم</option>
-                        <option value="system">سیستم پیشفرض</option>
+                        <option value="AsaGity" ${s.fontFamily === 'AsaGity' ? 'selected' : ''}>فونت یکان (پیشفرض)</option>
+                        <option value="AsaGity2" ${s.fontFamily === 'AsaGity2' ? 'selected' : ''}>فونت وزیر</option>
+                        <option value="AsaGity3" ${s.fontFamily === 'AsaGity3' ? 'selected' : ''}>فونت صمیم</option>
+                        <option value="AsaGity4" ${s.fontFamily === 'AsaGity4' ? 'selected' : ''}>فونت تنها</option>
+                        <option value="AsaGity5" ${s.fontFamily === 'AsaGity5' ? 'selected' : ''}>فونت شبنم</option>
+                        <option value="system" ${s.fontFamily === 'system' ? 'selected' : ''}>سیستم پیشفرض</option>
                     </select>
+                    <div class="preview-container" style="margin-top: 10px; padding: 10px; background: var(--background); border: 1px solid var(--border); border-radius: 8px;">
+                        <div id="fontPreview" style="transition: font-family 0.2s;">
+                            <div style="font-weight: normal;">متن نمونه با فونت انتخابی</div>
+                            <div style="font-weight: bold;">متن ضخیم (Bold)</div>
+                            <div style="font-size: 12px; color: var(--text-light);">اعداد: ۱۲۳۴۵۶۷۸۹۰</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="currencyUnit">واحد پول</label>
                     <select class="form-control" id="currencyUnit">
-                        <option value="rial">ریال</option>
-                        <option value="toman">تومان</option>
+                        <option value="rial" ${s.currencyUnit === 'rial' ? 'selected' : ''}>ریال</option>
+                        <option value="toman" ${s.currencyUnit === 'toman' ? 'selected' : ''}>تومان</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="timeFormat">فرمت زمان</label>
                     <select class="form-control" id="timeFormat">
-                        <option value="24h">24 ساعته</option>
-                        <option value="12h">12 ساعته (صبح/عصر)</option>
+                        <option value="24h" ${s.timeFormat === '24h' ? 'selected' : ''}>24 ساعته</option>
+                        <option value="12h" ${s.timeFormat === '12h' ? 'selected' : ''}>12 ساعته</option>
                     </select>
                 </div>
                 
-        <div class="form-group">
-            <label class="form-label" for="theme">تم برنامه</label>
-            <select class="form-control" id="theme">
-                <option value="system">سیستم پیشفرض 🎨</option>
-                <option value="auto">خودکار (بر اساس فصل) 🌸☀️🍁❄️</option>
-                <option value="light">روشن ☀️</option>
-                <option value="dark">تاریک 🌙</option>
-                <option value="spring">بهاری 🌸</option>
-                <option value="summer">تابستانی ☀️</option>
-                <option value="autumn">پاییزی 🍁</option>
-                <option value="winter">زمستانی ❄️</option>
-                <option value="neon">نئونی 💡</option>
-                <option value="rainbow">رنگین‌کمانی 🌈</option>
-            </select>
-            <small id="currentThemeDisplay">تم فعلی: در حال بارگذاری...</small>
-        </div>
+                <div class="form-group">
+                    <label class="form-label" for="theme">تم برنامه</label>
+                    <select class="form-control" id="theme">
+                        <option value="system" ${s.theme === 'system' ? 'selected' : ''}>سیستم پیشفرض 🎨</option>
+                        <option value="auto" ${s.theme === 'auto' ? 'selected' : ''}>خودکار (بر اساس فصل) 🌸☀️</option>
+                        <option value="light" ${s.theme === 'light' ? 'selected' : ''}>روشن ☀️</option>
+                        <option value="dark" ${s.theme === 'dark' ? 'selected' : ''}>تاریک 🌙</option>
+                        <option value="spring" ${s.theme === 'spring' ? 'selected' : ''}>بهاری 🌸</option>
+                        <option value="summer" ${s.theme === 'summer' ? 'selected' : ''}>تابستانی ☀️</option>
+                        <option value="autumn" ${s.theme === 'autumn' ? 'selected' : ''}>پاییزی 🍁</option>
+                        <option value="winter" ${s.theme === 'winter' ? 'selected' : ''}>زمستانی ❄️</option>
+                        <option value="neon" ${s.theme === 'neon' ? 'selected' : ''}>نئونی 💡</option>
+                        <option value="rainbow" ${s.theme === 'rainbow' ? 'selected' : ''}>رنگین‌کمانی 🌈</option>
+                    </select>
+                    <small id="currentSeason">...</small>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label">
-                        <input type="checkbox" id="enableBackgroundAnimation">
+                        <input type="checkbox" id="enableBackgroundAnimation" ${chkAnim}>
                         فعال کردن انیمیشن پس‌زمینه
                     </label>
                 </div>
 
+                <div class="settings-section" style="margin-top:20px; border-top:1px solid var(--border); padding-top:10px;">
+                    <h3>🔔 مدیریت پیام نصب</h3>
                     <div class="form-group">
-        <label class="form-label">
-            <input type="checkbox" id="enableNotifications" checked>
-            فعال کردن نوتیفیکیشن وضعیت حضور
-        </label>
-        <small>دریافت اعلان هنگام ثبت ورود و خروج در اپلیکیشن‌های پیام‌رسان</small>
-    </div>
-    
-    <div class="form-group">
-        <label class="form-label">
-            <input type="checkbox" id="enableBadge" checked>
-            فعال کردن نشانگر وضعیت (Badge)
-        </label>
-        <small>نمایش علامت ! روی آیکون برنامه هنگام حضور در محیط کار</small>
-    </div>
-    
-    <div class="action-buttons">
-        <button type="button" class="btn btn-info" id="testNotificationBtn">
-            <i class="fas fa-bell"></i> تست نوتیفیکیشن
-        </button>
-        <button type="button" class="btn btn-warning" id="resetNotificationBtn">
-            <i class="fas fa-redo"></i> بازنشانی مجوزها
-        </button>
-    </div>
-                
-                <div class="form-group">
-                    <label class="form-label">نمونه نمایش فعلی:</label>
-                    <div class="preview-container">
-                        <div id="fontPreview" class="font-preview">
-                            <div class="preview-normal">این یک نمونه متن با فونت فعلی است</div>
-                            <div class="preview-bold">این یک نمونه متن با وزن bold است</div>
-                            <div class="preview-small">متن زیرنویس با سایز کوچک‌تر</div>
-                        </div>
+                        <label class="form-label">
+                            <input type="checkbox" id="enableInstallPromotion">
+                            نمایش پیام پیشنهاد نصب برنامه
+                        </label>
                     </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-info" id="testInstallPromotionBtn">
+                            <i class="fas fa-bell"></i> تست نمایش پیام نصب
+                        </button>
+                    </div>
+                </div>
                 </div>
             </div>
         `;
 
-      // 🔥 پر کردن مقادیر با مدیریت خطا
-      setTimeout(() => {
-        try {
-          const fontFamilySelect = document.getElementById("fontFamily");
-          const currencyUnitSelect = document.getElementById("currencyUnit");
-          const timeFormatSelect = document.getElementById("timeFormat");
-          const enableBackgroundAnimation = document.getElementById(
-            "enableBackgroundAnimation"
-          );
-          const liveStatsUpdate = document.getElementById("liveStatsUpdate");
-          const showTimeDisplay = document.getElementById("showTimeDisplay");
-          const showDateDisplay = document.getElementById("showDateDisplay");
-          const showReportsDisplay =
-            document.getElementById("showReportsDisplay");
-          // event listeners برای نوتیفیکیشن
-          const testNotificationBtn = document.getElementById(
-            "testNotificationBtn"
-          );
-          const resetNotificationBtn = document.getElementById(
-            "resetNotificationBtn"
-          );
+        // --- راه‌اندازی Event Listenerها ---
+        
+        // آپدیت پیش‌نمایش‌ها
+        this.updateFontPreview();
+        this.updateSeasonDisplay();
 
-          if (fontFamilySelect)
-            fontFamilySelect.value = this.settings.fontFamily || "AsaGity";
-          if (currencyUnitSelect)
-            currencyUnitSelect.value = this.settings.currencyUnit || "rial";
-          if (timeFormatSelect)
-            timeFormatSelect.value = this.settings.timeFormat || "24h";
-          if (enableBackgroundAnimation)
-            enableBackgroundAnimation.checked =
-              this.settings.enableBackgroundAnimation !== false;
-          if (liveStatsUpdate)
-            liveStatsUpdate.checked = this.settings.liveStatsUpdate || false;
-          if (showTimeDisplay)
-            showTimeDisplay.checked = this.settings.showTimeDisplay !== false;
-          if (showDateDisplay)
-            showDateDisplay.checked = this.settings.showDateDisplay !== false;
-          if (showReportsDisplay)
-            showReportsDisplay.checked =
-              this.settings.showReportsDisplay !== false;
-          if (testNotificationBtn) {
-            testNotificationBtn.addEventListener("click", () => {
-              this.testNotification();
+        // لیسنر تغییر تم (برای اعمال آنی)
+        document.getElementById('theme').addEventListener('change', (e) => {
+            this.changeTheme(e.target.value);
+        });
+
+        // لیسنر پیام نصب (مربوط به کدهای قبلی)
+        const promoCheck = document.getElementById("enableInstallPromotion");
+        const promoTest = document.getElementById("testInstallPromotionBtn");
+        
+        if(promoCheck) {
+            const dontShow = this.loadFromStorage("dontShowInstallPromotion");
+            promoCheck.checked = !dontShow; // اگر dontShow true باشد، تیک باید برداشته شود
+            
+            promoCheck.addEventListener("change", (e) => {
+                this.saveToStorage("dontShowInstallPromotion", !e.target.checked);
             });
-          }
-
-          if (resetNotificationBtn) {
-            resetNotificationBtn.addEventListener("click", () => {
-              this.resetNotificationPermissions();
-            });
-          }
-
-          console.log("✅ مقادیر تنظیمات نمایش پر شدند");
-
-          // به‌روزرسانی نمونه و نمایش تم
-          this.updateFontPreview();
-          this.updateSeasonDisplay();
-
-          // 🔥 event listener برای تغییر تم
-          const themeSelect = document.getElementById("theme");
-          if (themeSelect) {
-            themeSelect.value = this.settings.theme || "system";
-            themeSelect.addEventListener("change", (e) => {
-              this.changeTheme(e.target.value);
-            });
-          }
-
-          // 🔥 به‌روزرسانی نمایش تم فعلی
-          this.updateThemeDisplay();
-
-          this.addInstallPromotionManagement(form);
-        } catch (error) {
-          console.error("❌ خطا در پر کردن مقادیر تنظیمات نمایش:", error);
         }
-      }, 100);
+        
+        if(promoTest) {
+            promoTest.addEventListener("click", () => {
+                this.saveToStorage("dontShowInstallPromotion", false);
+                this.showInstallPromotion();
+            });
+        }
+
+        // 🔥 لیسنر زنده برای تغییر فونت
+        document.getElementById('fontFamily').addEventListener('change', (e) => {
+            const font = e.target.value;
+            const preview = document.getElementById('fontPreview');
+            if (preview) {
+                // اعمال فونت فقط روی باکس پیش‌نمایش
+                if (font === 'system') {
+                    preview.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif';
+                } else {
+                    preview.style.fontFamily = font;
+                }
+            }
+        });
+
     } catch (error) {
-      console.error("❌ خطا در بارگذاری تب تنظیمات نمایش:", error);
-      // حالت fallback
-      form.innerHTML = `
-            <div class="tab-content active" id="displayTab">
-                <h3 class="tab-title">🎨 تنظیمات نمایش</h3>
-                <p style="color: var(--danger); text-align: center; padding: 40px;">
-                    خطا در بارگذاری تنظیمات نمایش. لطفاً صفحه را رفرش کنید.
-                </p>
-            </div>
-        `;
+        console.error("❌ خطا در بارگذاری تنظیمات نمایش:", error);
     }
-  }
+}
 
   // تست نوتیفیکیشن
   async testNotification() {
@@ -12478,60 +13030,163 @@ updateStats() {
     this.showNotification("🔧 عیب‌یابی انجام شد. کنسول را بررسی کنید.", "info");
   }
 
-  // اصلاح تابع loadSmartSystemTab
-  loadSmartSystemTab(form) {
+// جایگزین کامل تابع loadSmartSystemTab در main.js
+loadSmartSystemTab(form) {
     form.innerHTML = `
-        <div class="tab-content active" id="smartTab">
+<div class="tab-content active" id="smartTab">
             <h3 class="tab-title">⏱️ سیستم هوشمند حضور</h3>
             
-            <div class="form-group">
-                <label class="form-label">
-                    <input type="checkbox" id="autoWifiCheck">
-                    فعال کردن ثبت خودکار با وای‌فای
-                </label>
-                <small>با وصل شدن به وای‌فای محل کار، ورود به طور خودکار ثبت می‌شود</small>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">وای‌فای‌های محل کار</label>
-                <textarea class="form-control" id="workWifis" rows="3" placeholder="نام وای‌فای‌ها را در خطوط جداگانه وارد کنید"></textarea>
-                <small>هر وای‌فای در یک خط جداگانه</small>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">ساعات ثبت خودکار ورود</label>
-                <input type="text" class="form-control" id="autoCheckInHours" placeholder="8:00-10:00">
-                <small>فقط در این ساعات ورود خودکار انجام می‌شود</small>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">ساعات ثبت خودکار خروج</label>
-                <input type="text" class="form-control" id="autoCheckOutHours" placeholder="13:30-18:00">
-                <small>فقط در این ساعات خروج خودکار انجام می‌شود</small>
+            <div class="settings-section" style="margin-bottom: 20px;">
+                <h4 style="color: var(--primary); margin-bottom: 10px;">📶 تشخیص با وای‌فای</h4>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="autoWifiCheck">
+                        فعال کردن ثبت خودکار با وای‌فای
+                    </label>
+                    <small class="form-text text-muted" style="display:block; margin-right:25px;">با وصل شدن به وای‌فای محل کار، ورود به طور خودکار ثبت می‌شود</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">وای‌فای‌های محل کار</label>
+                    <textarea class="form-control" id="workWifis" rows="2" placeholder="نام وای‌فای‌ها را در خطوط جدا وارد کنید"></textarea>
+                    <small class="form-text text-muted">نام وای‌فای‌ها را در خطوط جداگانه وارد کنید (هر خط یک نام)</small>
+                </div>
+                
+                </div>
+
+            <div class="settings-section" style="border-top: 2px solid var(--border); padding-top: 20px;">
+                <h4 style="color: var(--primary); margin-bottom: 10px;">📍 تشخیص با موقعیت مکانی (GPS)</h4>
+                
+                <div class="form-group">
+                    <label class="form-label" style="cursor: pointer;">
+                        <input type="checkbox" id="enableGpsAuto">
+                        فعال‌سازی ثبت خودکار با GPS
+                    </label>
+                    <small class="form-text text-muted" style="display:block; margin-right:25px;">با فعال‌سازی، موقعیت شما ردیابی شده و با ورود/خروج از محدوده، رکورد ثبت می‌شود. (به محض فعال‌سازی، نقشه نمایش داده می‌شود)</small>
+                </div>
+
+                <div id="gpsSettingsArea" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">موقعیت محل کار</label>
+                        <div id="mapContainer" style="height: 300px; width: 100%; border-radius: 10px; margin-bottom: 10px; border: 2px solid var(--border); background: #eee; display: flex; align-items: center; justify-content: center;">
+                            <span>در حال بارگذاری نقشه...</span>
+                        </div>
+                        
+                        <button type="button" class="btn btn-info" id="getCurrentLocationBtn" style="width: 100%; margin-bottom: 10px;">
+                            <i class="fas fa-crosshairs"></i> دریافت موقعیت فعلی من
+                        </button>
+                        <small class="form-text text-muted">پین آبی را روی محل کار قرار دهید یا دکمه بالا را بزنید.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">شعاع مجاز (متر)</label>
+                        <input type="number" class="form-control" id="gpsRadius" min="50" max="1000" step="10">
+                        <small class="form-text text-muted">فاصله مجاز از مرکز برای ثبت ورود (پیشنهاد: ۱۰۰ متر)</small>
+                    </div>
+
+                    <div class="form-group" style="display: flex; gap: 15px;">
+                        <label style="cursor: pointer;">
+                            <input type="checkbox" id="gpsAutoCheckIn"> ثبت ورود خودکار
+                        </label>
+                        <label style="cursor: pointer;">
+                            <input type="checkbox" id="gpsAutoCheckOut"> ثبت خروج خودکار
+                        </label>
+                    </div>
+                    
+                    <input type="hidden" id="workLat">
+                    <input type="hidden" id="workLng">
+                </div>
             </div>
         </div>
     `;
 
-    // پر کردن مقادیر
+    // مقداردهی اولیه
     setTimeout(() => {
-      const autoWifiCheck = document.getElementById("autoWifiCheck");
-      const workWifis = document.getElementById("workWifis");
-      const autoCheckInHours = document.getElementById("autoCheckInHours");
-      const autoCheckOutHours = document.getElementById("autoCheckOutHours");
+        // 1. وای‌فای
+        const wifiCheck = document.getElementById('autoWifiCheck');
+        const wifisArea = document.getElementById('workWifis');
+        if (wifiCheck) wifiCheck.checked = this.settings.autoWifiEnabled || false;
+        if (wifisArea) wifisArea.value = this.settings.workWifis ? this.settings.workWifis.join('\n') : '';
 
-      if (autoWifiCheck)
-        autoWifiCheck.checked = this.settings.autoWifiEnabled || false;
-      if (workWifis)
-        workWifis.value = this.settings.workWifis
-          ? this.settings.workWifis.join("\n")
-          : "AsaGity-Fiber\nAsaGity-shatel\nLocal-WiFi";
-      if (autoCheckInHours)
-        autoCheckInHours.value = this.settings.autoCheckInHours || "8:00-10:00";
-      if (autoCheckOutHours)
-        autoCheckOutHours.value =
-          this.settings.autoCheckOutHours || "13:30-18:00";
+        // 2. GPS
+        const gpsSettings = this.settings.gps || this.getDefaultSettings().gps;
+        const enableGpsCheckbox = document.getElementById('enableGpsAuto');
+        const gpsSettingsArea = document.getElementById('gpsSettingsArea');
+        
+        // پر کردن مقادیر
+        if (enableGpsCheckbox) {
+            enableGpsCheckbox.checked = gpsSettings.enabled;
+            document.getElementById('gpsRadius').value = gpsSettings.radius || 100;
+            document.getElementById('gpsAutoCheckIn').checked = gpsSettings.autoCheckIn !== false;
+            document.getElementById('gpsAutoCheckOut').checked = gpsSettings.autoCheckOut !== false;
+            document.getElementById('workLat').value = gpsSettings.lat;
+            document.getElementById('workLng').value = gpsSettings.lng;
+
+            // اگر از قبل فعال بوده، نقشه را نشان بده
+            if (gpsSettings.enabled) {
+                gpsSettingsArea.style.display = 'block';
+                if (typeof L !== 'undefined') {
+                    setTimeout(() => this.initMap(gpsSettings.lat, gpsSettings.lng, gpsSettings.radius), 200);
+                }
+            }
+
+            // 🔥 اصلاح رویداد تغییر چک‌باکس (دقت کنید ویرگول‌ها درست باشند)
+            enableGpsCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    // نمایش فوری پنل تنظیمات
+                    gpsSettingsArea.style.display = 'block';
+                    
+                    // لود اولیه نقشه
+                    if (typeof L !== 'undefined') {
+                        const lat = parseFloat(document.getElementById('workLat').value) || 35.6892;
+                        const lng = parseFloat(document.getElementById('workLng').value) || 51.3890;
+                        const radius = document.getElementById('gpsRadius').value;
+                        
+                        setTimeout(() => {
+                            this.initMap(lat, lng, radius);
+                        }, 100);
+                    }
+
+                    // درخواست GPS
+                    if ("geolocation" in navigator) {
+                        this.showNotification("📡 در حال اتصال به GPS...", "info");
+                        
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => { // آرگومان اول: موفقیت
+                                this.showNotification("✅ موقعیت دقیق یافت شد", "success");
+                                if (typeof L !== 'undefined') {
+                                    this.initMap(position.coords.latitude, position.coords.longitude, document.getElementById('gpsRadius').value);
+                                    this.updateLocationFields(position.coords.latitude, position.coords.longitude);
+                                }
+                            },
+                            (error) => { // آرگومان دوم: خطا (قبل از این حتما ویرگول باشد)
+                                console.warn("GPS Error:", error.message);
+                                if (error.code === error.TIMEOUT) {
+                                    this.showNotification("⚠️ GPS پاسخ نداد، لطفاً موقعیت را دستی روی نقشه تنظیم کنید", "warning");
+                                } else {
+                                    this.showNotification("⛔ دسترسی GPS محدود است. دستی تنظیم کنید", "error");
+                                }
+                            },
+                            { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 } // آرگومان سوم: آپشن‌ها (قبل از این هم ویرگول باشد)
+                        );
+                    }
+                } else {
+                    gpsSettingsArea.style.display = 'none';
+                }
+            });
+
+            // دکمه دریافت موقعیت من
+            document.getElementById('getCurrentLocationBtn').addEventListener('click', () => {
+                this.locateUserOnMap();
+            });
+
+            // تغییر شعاع
+            document.getElementById('gpsRadius').addEventListener('change', (e) => {
+                this.updateMapCircle(e.target.value);
+            });
+        }
+
     }, 100);
-  }
+}
 
   // ایجاد بخش سیستم هوشمند
   createAutoSystemSection() {
@@ -14195,28 +14850,39 @@ updateStats() {
   }
 
   // اتصال Event Listeners برای آرشیو
-  attachArchiveEventListeners() {
-    try {
-      // ویرایش روز
-      document.querySelectorAll(".edit-archive-record").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          const date = e.target.closest("button").dataset.date;
-          this.editArchiveDay(date);
+attachArchiveEventListeners() {
+    // 1. دکمه ویرایش روز (دکمه زرد)
+    document.querySelectorAll('.edit-archive-day').forEach(button => {
+        // حذف لیسنرهای قبلی با کلون کردن (برای جلوگیری از اجرای چندباره)
+        const newBtn = button.cloneNode(true);
+        button.parentNode.replaceChild(newBtn, button);
+        
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();  // 🔥 جلوگیری از ارسال فرم
+            e.stopPropagation(); // 🔥 جلوگیری از رسیدن کلیک به فرم تنظیمات
+            
+            const date = e.target.closest('button').dataset.date;
+            console.log("✏️ کلیک روی ویرایش روز:", date);
+            
+            // باز کردن مودال ویرایش (روی تنظیمات)
+            this.editArchiveDay(date);
         });
-      });
+    });
 
-      // حذف روز
-      document.querySelectorAll(".delete-archive-day").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          const date = e.target.closest("button").dataset.date;
-          this.deleteArchiveDay(date);
+    // 2. دکمه حذف روز (دکمه قرمز)
+    document.querySelectorAll('.delete-archive-day').forEach(button => {
+        const newBtn = button.cloneNode(true);
+        button.parentNode.replaceChild(newBtn, button);
+
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();  // 🔥 جلوگیری از ارسال فرم
+            e.stopPropagation(); // 🔥 جلوگیری از رسیدن کلیک به فرم تنظیمات
+            
+            const date = e.target.closest('button').dataset.date;
+            this.deleteArchiveDay(date);
         });
-      });
-    } catch (error) {
-      console.error("خطا در اتصال Event Listeners آرشیو:", error);
-    }
-  }
-
+    });
+}
   // ریست وضعیت برنامه
   resetApplicationState() {
     // ریست وضعیت
@@ -14323,73 +14989,56 @@ updateStats() {
     });
   }
 
-// 🟢 کد اصلاح شده
-  // بارگذاری داده‌های آرشیو - نسخه اصلاح شده
-  loadArchiveData() {
-    // 🔥 استفاده از IDهای جدید
-    const month = parseInt(document.getElementById("mainArchiveMonth").value);
-    const year = parseInt(document.getElementById("mainArchiveYear").value);
-    const day = parseInt(document.getElementById("mainArchiveDay").value); // 🔥 فیلتر روز اضافه شد
+// جایگزین تابع loadArchiveData در main.js
+loadArchiveData() {
+    // خواندن فیلترها
+    const monthElement = document.getElementById("mainArchiveMonth");
+    const yearElement = document.getElementById("mainArchiveYear");
+    const dayElement = document.getElementById("mainArchiveDay");
 
-    // فیلتر کردن رکوردها بر اساس ماه و سال شمسی انتخاب شده
+    // اگر المان‌ها هنوز لود نشده‌اند، خارج شو
+    if (!monthElement || !yearElement || !dayElement) return;
+
+    const month = parseInt(monthElement.value);
+    const year = parseInt(yearElement.value);
+    const day = parseInt(dayElement.value);
+
     const filteredRecords = this.records.filter((record) => {
-      try {
-          const jalaliDate = toJalaliDate(record.date).split("/");
-          const recordYear = parseInt(jalaliDate[0]);
-          const recordMonth = parseInt(jalaliDate[1]);
-          const recordDay = parseInt(jalaliDate[2]);
-          
-          // 🔥 منطق فیلتر بهبود یافته: اگر فیلتری انتخاب نشده (مقدار "" یا NaN)، آن را نادیده بگیر
-          const yearMatch = !year || recordYear === year;
-          const monthMatch = !month || recordMonth === month;
-          const dayMatch = !day || recordDay === day; // 🔥 اعمال فیلتر روز
-          
-          return yearMatch && monthMatch && dayMatch;
-      } catch (e) {
-          return false; // در صورت خطا در تبدیل تاریخ، رکورد را نادیده بگیر
-      }
+        try {
+            const jalaliDate = toJalaliDate(record.date).split("/");
+            const recordYear = parseInt(jalaliDate[0]);
+            const recordMonth = parseInt(jalaliDate[1]);
+            const recordDay = parseInt(jalaliDate[2]);
+            
+            const yearMatch = !year || recordYear === year;
+            const monthMatch = !month || recordMonth === month;
+            const dayMatch = !day || recordDay === day;
+            
+            return yearMatch && monthMatch && dayMatch;
+        } catch (e) { return false; }
     });
 
-    // نمایش داده‌ها در جدول آرشیو
-    // 🔥 استفاده از ID جدول جدید
     const tbody = document.querySelector("#mainArchiveTable tbody");
-    
-    if (!tbody) {
-        console.error("❌ tbody جدول مودال اصلی آرشیو (#mainArchiveTable tbody) پیدا نشد!");
-        return;
-    }
+    if (!tbody) return;
     
     tbody.innerHTML = "";
 
-    // گروه‌بندی رکوردها بر اساس تاریخ شمسی
+    // گروه‌بندی
     const dailyRecords = {};
-
     filteredRecords.forEach((record) => {
-      const jalaliDateStr = toJalaliDate(record.date);
-      if (!dailyRecords[jalaliDateStr]) {
-        dailyRecords[jalaliDateStr] = [];
-      }
-      dailyRecords[jalaliDateStr].push(record);
+        const jalaliDateStr = toJalaliDate(record.date);
+        if (!dailyRecords[jalaliDateStr]) dailyRecords[jalaliDateStr] = [];
+        dailyRecords[jalaliDateStr].push(record);
     });
 
-    Object.keys(dailyRecords)
-      .sort()
-      .reverse()
-      .forEach((date) => {
+    Object.keys(dailyRecords).sort().reverse().forEach((date) => {
         const dayRecords = dailyRecords[date];
-
-        // مرتب کردن رکوردها بر اساس زمان
         dayRecords.sort((a, b) => a.timestamp - b.timestamp);
-
-        let firstIn = null;
-        let lastOut = null;
-        let dayHours = 0;
-        let i = 0;
-
-        // 🔥 استفاده از تابع محاسبه روزانه برای دقت بیشتر
         const dayData = this.calculateDayData(dayRecords, dayRecords[0].date);
 
         const row = document.createElement("tr");
+        
+        // 🔥 ستون عملیات حذف شد
         row.innerHTML = `
             <td>${date}</td>
             <td>${dayData.firstIn ? this.formatTime(dayData.firstIn) : "-"}</td>
@@ -14399,13 +15048,13 @@ updateStats() {
             <td>${this.formatCurrency(dayData.dailyIncome)}</td>
         `;
         tbody.appendChild(row);
-      });
+    });
 
     if (tbody.children.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="6" style="text-align: center;">هیچ داده‌ای برای نمایش وجود ندارد</td></tr>';
+        // تعداد colspan را به 6 کاهش دادیم چون ستون عملیات حذف شد
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">هیچ داده‌ای یافت نشد</td></tr>';
     }
-  }
+}
 
   // صادرات آرشیو به اکسل
   exportArchiveToExcel(month, year) {
